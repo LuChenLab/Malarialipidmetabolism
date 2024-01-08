@@ -1,1 +1,1 @@
-# Malaria_lipid_metabolism
+# Malaria lipid metabolism
