@@ -1,0 +1,98 @@
+---
+title: "Untitled"
+author: "yangqingxin"
+date: "2024/1/8"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#1 loading package and data
+##1.1 package
+```{r}
+library(Seurat)
+library(Matrix)
+library(magrittr)
+library(ggplot2)
+library(data.table)
+library(dplyr)
+library(rtracklayer)
+library(xlsx)
+library(cowplot)
+library(readr)
+library(readxl)
+library(ComplexHeatmap)
+library(grid)
+```
+##1.2. data
+```{r}
+Pbsce <- readRDS("./Analysis/Pb_IDC_seurat.Rds")
+Pfsce <- readRDS("./Analysis/Pf_IDC_seurat.Rds")
+Lipid_gene <- read.xlsx("./Data/Genes_related_to_lipid_metabolism.xlsx",sheetIndex = 1)%>%as.data.table()
+```
+
+##2.2. 表达矩阵
+```{r}
+pb_express<- AverageExpression(object = Pbsce,group.by = "Cluster")
+pb_express <- pb_express$RNA
+pb_express%<>%t()%>%scale()%>%t()
+colnames(pb_express) <- c("ER","MR","ET","MT","LT","ES","MS","LS")
+
+#
+pf_express<- AverageExpression(object = Pfsce,group.by = "SciBet")
+pf_express <- pf_express$RNA
+pf_express%<>%t()%>%scale()%>%t()
+colnames(pf_express) <- c("ER","MR","ET","MT","LT","ES","MS","LS")
+#
+pb_express <- pb_express[gsub("_","-",Lipid_gene$PB),]
+rownames(pb_express) <- Lipid_gene$Genename
+#
+pf_express <- pf_express[gsub("_","-",Lipid_gene$PF),]
+rownames(pf_express) <- Lipid_gene$Genename
+```
+##2.3.
+```{r}
+Lipid_anno <- Lipid_gene[,c("Genename","Process")] 
+Lipid_anno%<>%as.data.frame()
+rownames(Lipid_anno) <- Lipid_anno$Genename
+Lipid_anno <- Lipid_anno[,-1,drop=F]
+Lipid_anno$Process <- factor(Lipid_anno$Process,levels = c("Biosynthesis","Catabolism","Homeostasis","Storage","Transport","Other metablic processes"))
+```
+
+###2.3.2. 
+```{r,fig.height=10,fig.width=7.5}
+p1 <- ComplexHeatmap::Heatmap(pf_express,
+                              cluster_rows = T,cluster_columns = F,show_row_names = T,show_column_names = T,row_names_side = "left",
+                              # col=colorRampPalette(rev(brewer.pal(n = 11, name ="RdBu")))(100),
+                                col=circlize::colorRamp2(c(-1, 0, 1), c("#2166AC", "white", "#B2182B")),
+                              row_title = c("","",""),row_split = 3,
+                              show_row_dend = F,
+                              show_heatmap_legend = F,
+                              column_title = "P. falciparum",
+                              column_names_side = "top",column_names_rot = 45,clustering_method_rows = "complete",
+                              border = T,border_gp = gpar(col = 'black', lwd = 2)
+                              )  
+
+p2 <-ComplexHeatmap::Heatmap(pb_express,
+                             cluster_rows = T,cluster_columns = F,show_row_names = T,show_column_names = T,row_names_side = "left",
+                             # col=colorRampPalette(rev(brewer.pal(n = 11, name ="RdBu")))(100),
+                                 col=circlize::colorRamp2(c(-1, 0, 1), c("#2166AC", "white", "#B2182B")),
+                             name = "Expression",
+                             row_split =3,
+                             right_annotation = rowAnnotation(
+                               df = Lipid_anno,
+                               col=list(
+                                 "Process"=c("Biosynthesis"="#B24745B2","Catabolism"="#DF8F44B2","Homeostasis"="#374E55B2",
+                                             "Storage"="#00A1D5B2","Transport"="#79AF97B2",
+                                             "Other metablic processes"="#6A6599B2")
+                                        ),show_annotation_name=F
+                                                                ),
+                             column_title = "P. berghei",
+                             column_names_side = "top",column_names_rot = 45,clustering_method_rows = "complete",
+                             border = T,border_gp = gpar(col = 'black', lwd = 2)
+                             )
+p1+p2
+```

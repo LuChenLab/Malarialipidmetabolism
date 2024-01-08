@@ -1,0 +1,160 @@
+---
+title: "Untitled"
+author: "yangqingxin"
+date: "2024/1/8"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1 loading package
+```{r}
+library(Seurat)
+library(Matrix)
+library(magrittr)
+library(ggplot2)
+library(data.table)
+library(dplyr)
+library(clusterProfiler)
+library(org.Pf.plasmo.db)
+library(GSEABase)
+library(rtracklayer)
+library(xlsx)
+library(RColorBrewer)
+library(scibet)
+```
+
+#2 Pb Seurat object
+##2.1. loading data
+```{r}
+SJ_count_DF <- read.csv("./Data/pb_IDC_10X/pb10xIDC_counts.csv")
+rownames(SJ_count_DF) <- SJ_count_DF$X
+SJ_count_DF <- SJ_count_DF[,-1]
+SJ_count_DF%<>%as.matrix()
+SJ_count_DF <- as(SJ_count_DF, "dgCMatrix")
+
+info <- read.csv("./Data/pb_IDC_10X/pb10xIDC_pheno.csv")
+rownames(info) <- info$X
+info <- info[,-1]
+```
+##2.2 making SeuratObject
+```{r}
+Pbsce <- SeuratObject::CreateSeuratObject(counts = SJ_count_DF,meta.data = info)
+
+#
+Pbsce  %<>% Seurat::NormalizeData() %>%          
+FindVariableFeatures(selection.method = "vst", nfeatures = 2000) %>% 
+ScaleData(features=rownames(Pbsce)) 
+Pbsce <- RunPCA(Pbsce, npcs = 30, verbose = FALSE)
+ElbowPlot(Pbsce,ndims = 30)
+
+#
+Pbsce <- RunUMAP(Pbsce, reduction = "pca", dims = 1:10)
+Pbsce <- FindNeighbors(Pbsce, reduction = "pca", dims = 1:10)
+Pbsce <- FindClusters(Pbsce, resolution = seq(0.1,1,0.1))
+
+#
+Pbsce@meta.data %<>%mutate(
+  Cluster=case_when(
+    stage_pred=="6"~"Early ring",
+    stage_pred=="2"~"Late ring",
+    stage_pred=="0"~"Early troph",
+    stage_pred=="1"~"Mid troph",
+    stage_pred=="3"~"Late troph",
+    stage_pred=="4"~"Early schi",
+    stage_pred=="7"~"Mid schi",
+    stage_pred=="5"~"Late schi",
+  )
+)
+Pbsce$Cluster <- factor(Pbsce$Cluster,levels = c("Early ring","Late ring","Early troph","Mid troph","Late troph","Early schi","Mid schi","Late schi"))
+saveRDS(Pbsce,"./Analysis/Pb_IDC_seurat.Rds")
+```
+
+
+#3. Pf Seurat object
+##3.1. loading data 
+```{r}
+SJ_count_DF <- read.csv("./Data/pf_IDC_10X/pf10xIDC_counts.csv")
+rownames(SJ_count_DF) <- SJ_count_DF$X
+SJ_count_DF <- SJ_count_DF[,-1]
+SJ_count_DF%<>%as.matrix()
+SJ_count_DF <- as(SJ_count_DF, "dgCMatrix")
+
+info <- read.csv("./Data/pf_IDC_10X/pf10xIDC_pheno.csv")
+rownames(info) <- info$X
+info <- info[,-1]
+```
+
+##3.1. making SeuratObject
+```{r}
+Pfsce <- SeuratObject::CreateSeuratObject(counts = SJ_count_DF,meta.data = info)
+
+#
+Pfsce  %<>% Seurat::NormalizeData() %>%          
+FindVariableFeatures(selection.method = "vst", nfeatures = 2000) %>% 
+ScaleData(features=rownames(Pfsce)) 
+Pfsce <- RunPCA(Pfsce, npcs = 30, verbose = FALSE)
+ElbowPlot(Pfsce,ndims = 30)
+
+#
+Pfsce <- RunUMAP(Pfsce, reduction = "pca", dims = 1:28,n.neighbors = 8,min.dist = 0.48)  
+Pfsce <- FindNeighbors(Pfsce, reduction = "pca", dims = 1:10)
+Pfsce <- FindClusters(Pfsce, resolution = seq(0.1,1,0.1))
+```
+
+#4. Scibet
+##4.1. loading Orthdata
+```{r}
+Orth <- read.xlsx("./Data/Gene_Orth_Data.xlsx",sheetIndex = 1)
+Orth %<>% as.data.table()
+```
+##4.2. Extracting conserved gene
+```{r}
+#PBANKA
+PBANKA <- Orth$berghei
+PBANKA <- gsub("_","-",PBANKA)
+PBANKA <- PBANKA[which(PBANKA%in%rownames(Pbsce))]
+#PF3D7
+PF3D7  <- Orth$falciparum
+PF3D7 <- gsub("_","-",PF3D7)
+PF3D7 <- PF3D7[which(PF3D7%in%rownames(Pfsce))]
+
+PF3D7_bp <- Orth$berghei[which(gsub("_","-",Orth$falciparum)%in%PF3D7)]
+PF3D7_bp <- gsub("_","-",PF3D7_bp)
+Final_Pb <- intersect(PF3D7_bp,PBANKA)
+Final_Pf3D7 <- Orth$falciparum[which(gsub("_","-",Orth$berghei)%in%Final_Pb)]
+Final_Pf3D7 <- gsub("_", "-", Final_Pf3D7)
+
+#check
+identical(Orth$berghei%in%gsub("-","_",Final_Pb),Orth$falciparum%in%gsub("-","_",Final_Pf3D7))
+rm(PBANKA,PF3D7,PF3D7_bp)
+```
+##4.3 Extracting Expressing data
+```{r}
+Pb_nor <- Pbsce@assays$RNA@data[Final_Pb,]%>%as.data.frame()%>%t()%>%as.data.frame()
+Pf_nor <- Pfsce@assays$RNA@data[Final_Pf3D7,]%>%as.data.frame()%>%t()%>%as.data.frame()
+colnames(Pf_nor) <- colnames(Pb_nor)
+
+Pb_nor$label <- Pbsce@meta.data[rownames(Pb_nor),]$Cluster
+```
+##4.4 scibet
+```{r,fig.width=6,fig.height=4}
+prd <- SciBet(train = Pb_nor , test = Pf_nor,k = 1000)
+PF_DF <- data.table(cell_type = prd,cell_barcode = rownames(Pf_nor))
+setkey(PF_DF,cell_barcode)
+Pfsce@meta.data$SciBet <- PF_DF[rownames(Pfsce@meta.data)]$cell_type
+Pfsce@meta.data$SciBet <- factor(Pfsce@meta.data$SciBet,
+                                       levels = c("Early ring","Late ring","Early troph","Mid troph","Late troph","Early schi","Mid schi","Late schi"))
+saveRDS(Pfsce,"./Analysis/Pf_IDC_seurat.Rds")
+```
+
+#5. Plot
+```{r,fig.width=14,fig.height=5}
+p1 <- UMAPPlot(Pbsce,group.by="Cluster")+scale_color_brewer(palette = "Set1")
+p2 <- UMAPPlot(Pfsce,group.by="SciBet")+scale_color_brewer(palette = "Set1")  
+p1+p2
+```
+
+
