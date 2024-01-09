@@ -16,7 +16,9 @@ The project includes raw count matrices and R scripts to analyse scRNA-seq of <I
    raw_counts.txt:  raw count matrices of bulk RNA-seq.
    
 3) Analysis  
-    
+   Pf_IDC_seurat.Rds: SeuratObject of <I>P. falciparum</I>.  
+   Pb_IDC_seurat.Rds: SeuratObject of <I>P. berghei</I>.  
+   Mfuuzz_X_Y.Rds: The result files of Mfuzz analysis, "X" denotes the strain while "Y" signifies the file content.
    
-4) Script  
+5) Script  
    . 
