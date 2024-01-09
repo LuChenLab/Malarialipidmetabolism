@@ -8,9 +8,12 @@ The project includes raw count matrices and R scripts to analyse scRNA-seq of <I
 
 1) Data   
    pf_IDC_10X, pb_IDC_10X: raw count matrices of scRNA-seq from [MCA](https://www.malariacellatlas.org).  
+   Exprotein_gene_list.xlsx: list of genes that encode exported proteins.  
+   Gene_MIS_Score.xlsx: mutagenesis index scores [(MISs)](https://www.science.org/doi/10.1126/science.aap7847) of <I>P. falciparum</I> genes.  
+   Genes_related_to_lipid_metabolism: Plasmodium conserved genes involved in lipid metabolism.  
    
-2) Analysis  
+3) Analysis  
     
    
-3) Script  
+4) Script  
    . 
