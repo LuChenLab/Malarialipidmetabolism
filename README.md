@@ -13,7 +13,7 @@ The project includes raw count matrices and R scripts to analyze scRNA-seq of <I
    Genes_related_to_lipid_metabolism: Plasmodium conserved genes involved in lipid metabolism.  
    Gene_Orth_Data.xlsx: one-to-one orthologs across ten Plasmodium species.  
    Protein_sequence_of_candidategenes.Rds: Protein sequences of 6 candidate genes.  
-   raw_counts.txt:  raw count matrices of bulk RNA-seq.
+   raw_counts.txt:  raw count matrices of bulk RNA-seq.   
    RF_GeneInfo.xlsx： gene information for random forest.
    
 3) Analysis  
