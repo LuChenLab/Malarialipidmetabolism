@@ -1,0 +1,140 @@
+---
+title: "Untitled"
+author: "yangqingxin"
+date: "2024/4/13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1.
+##1.1.
+```{r}
+library(data.table)
+library(dplyr)
+library(tidyr)
+library(plyr)
+library(magrittr)
+library(randomForest)
+library(xlsx)
+library(randomForest)
+library(readxl)
+library(caret)
+library(readr)
+library(ROSE)
+library(VennDiagram)
+library(pROC)
+```
+##1.2.特征的筛选
+```{r}
+Feature <- read.xlsx("../Data/RF_GeneInfo.xlsx",sheetIndex = 1)
+Feature <- Feature[,-1]
+#
+Feature_unkonwn <- Feature %>% filter(Lable == 2)
+Feature_unkonwn$Lable%<>%as.character()
+Feature_konwn <- Feature %>% filter(Lable != 2)
+Feature_konwn$Lable%<>%as.character()
+Feature_konwn$Lable <- factor(Feature_konwn$Lable,levels = c(0,1))
+```
+#2.
+##2.1.
+```{r}
+positive_samples <- Feature_konwn %>% filter(Lable == 1)
+negative_samples <- Feature_konwn %>% filter(Lable == 0)
+set.seed(123)
+if (nrow(positive_samples) < 100) {
+  positive_samples_oversampled <- positive_samples[sample(1:nrow(positive_samples), 100, replace = TRUE), ]
+} else {
+  positive_samples_oversampled <- positive_samples
+}
+
+if (nrow(negative_samples) > 100) {
+  negative_samples_undersampled <- negative_samples[sample(1:nrow(negative_samples), 100), ]
+} else {
+  negative_samples_undersampled <- negative_samples
+}
+
+balanced_data <- rbind(positive_samples_oversampled, negative_samples_undersampled)
+```
+##2.2. 分割数据：80%用于训练，20%用于测试
+```{r}
+set.seed(123)
+#
+trainIndex <- createDataPartition(balanced_data$Lable, p = .8, list = FALSE)
+trainData <- balanced_data[trainIndex, ]
+testData <- balanced_data[-trainIndex, ]
+```
+##3.3. 
+```{r}
+set.seed(123)
+rfModel <- randomForest(Lable ~ . - GeneID, data = trainData, importance = TRUE,proximity = TRUE,ntree = 500)
+```
+##3.4. 
+```{r,fig.width=8,fig.height=6}
+varImpPlot(rfModel)
+```
+
+##3.6. 
+###3.6.1. 
+```{r}
+# 使用测试数据集进行预测
+testPredictions <- predict(rfModel, testData)
+conf_matrix <- confusionMatrix(testPredictions, testData$Lable)
+```
+###3.6.2. 构建混淆矩阵
+```{r}
+#
+accuracy <- conf_matrix$overall['Accuracy']
+sensitivity <- conf_matrix$byClass['Sensitivity']
+F1 <- conf_matrix$byClass['F1']
+conf_matrix_df <- as.data.frame(conf_matrix$table)
+```
+###3.6.2. 绘制混淆矩阵结果
+```{r,fig.width=5,fig.height=5}
+ggplot(data=conf_matrix_df, aes(x=Reference, y=Prediction, fill=Freq)) +
+  geom_tile() +  # 使用瓦片图层来创建热图
+  geom_text(aes(label=Freq), vjust=1,size=8) +  
+  scale_fill_gradient(low="white", high="red") + 
+  labs(title="Confusion Matrix", x="Actual", y="Predicted") + 
+  theme_minimal() + theme(plot.title = element_text(hjust = .5,size=20),axis.title.x = element_text(size = 20),axis.title.y = element_text(size = 20,hjust=.8),axis.text = element_text(size = 16) )+guides(fill=FALSE)+
+  annotate("text", x=.1, y=0, label=sprintf("Accuracy: %.2f", accuracy), size=5, hjust=0) +
+  annotate("text", x=.1, y=-.5, label=sprintf("Sensitivity: %.2f", sensitivity[1]), size=5, hjust=0) +  
+  annotate("text", x=.1, y=-1, label=sprintf("F1 Score: %.2f", F1[1]), size=5, hjust=0)+
+  annotate("text", x=1.5, y=-1.5, label=sprintf("", F1[1]), size=5, hjust=0)
+```
+##3.7. AUC曲线
+```{r,fig.width=5,fig.height=5}
+rfPred <- predict(rfModel, newdata=testData, type="prob")[,2]
+
+rocResult <- roc(testData$Lable, rfPred)
+# 绘制ROC曲线
+plot(rocResult, main="ROC Curve",type="l",col="red",
+     xlab="FP", ylab="TP"
+     )
+auc(rocResult)  # 输出AUC值
+```
+#4.
+##4.1. 
+```{r}
+# 对未知标签的数据进行预测
+unknownPredictions <- predict(rfModel, Feature_unkonwn,type = "prob")
+Feature_unkonwn$Lable <- round(unknownPredictions[,2],4)
+Feature_unkonwn%<>%as.data.table()
+setkey(Feature_unkonwn,GeneID)
+Feature_unkonwn[GeneID=="PF3D7_1368000"]$Lable
+```
+##4.2. 
+```{r,fig.width=5,fig.height=4}
+setorder(Feature_unkonwn,-Lable)
+Feature_unkonwn$GeneID <- factor(Feature_unkonwn$GeneID,levels = Feature_unkonwn$GeneID)
+ggplot(Feature_unkonwn,aes(x=Lable))+geom_density()+theme_classic()+ggtitle("Random forest probability prediction results")+
+  theme(axis.text = element_text(size = 15),plot.title = element_text(hjust = .5,size = 17),
+        axis.title = element_text(size = 16))+
+  xlab("probability")+  ylab("Density")+
+  geom_vline(xintercept =quantile(Feature_unkonwn$Lable,.95,na.rm = T),color="red")+
+  annotate(geom="text",label="90%",x=0.59,y=7,size=6)+
+  annotate(geom="text",label="10%",x=0.72,y=7,size=6)
+```
+
