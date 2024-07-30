@@ -14,9 +14,8 @@ The project includes raw count matrices and R scripts to analyze scRNA-seq of <I
    05_raw_counts.txt:  raw count matrices of bulk RNA-seq.
    
 3) Analysis  
-   Pf_IDC_seurat.Rds: SeuratObject of <I>P. falciparum</I>.  
-   Pb_IDC_seurat.Rds: SeuratObject of <I>P. berghei</I>.  
-   Mfuuzz_X_Y.Rds: In the result files of Mfuzz analysis, "X" denotes the strain while "Y" signifies the file content.
+   03_01_pb_cl.Rds, 03_02_pb_df.Rds, 03_03_pb_Mfuzzgene.Rds: SeuratObject of <I>P. falciparum</I>.  
+   03_04_pf_cl.Rds, 03_05_pf_df.Rds, 03_06_pf_Mfuzzgene.Rds: SeuratObject of <I>P. berghei</I>.  
    
 5) Script  
    01_Fig1_Pf_Pb_SeuratObject.Rmd: [Seurat](https://www.cell.com/cell/fulltext/S0092-8674(21)00583-3?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867421005833%3Fshowall%3Dtrue) performed dimensionality reduction and stage clustering of single-cell transcriptomic data.  
