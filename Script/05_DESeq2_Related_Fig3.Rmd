@@ -1,0 +1,146 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1. loading package and data
+##1.1. package
+```{r}
+library("magrittr")
+library("DESeq2")
+library("RColorBrewer")
+library("clusterProfiler")
+library("data.table")
+library("ggplot2")
+library("ggpubr")
+library("vsn")
+library("reshape2")
+library("readr")
+library("rtracklayer")
+library("readxl")
+library("ggrepel")
+library("org.Pf.plasmo.db")
+library("GseaVis")
+library("dplyr")
+library("xlsx")
+```
+##1.2. data
+```{r}
+#
+Rawcount <- read.table("../Data/05_raw_counts.txt")
+Metadata <- data.frame(row.names = colnames(Rawcount),Group=factor(rep(c("CAPKO","WT"),c(5,5)),c("CAPKO","WT")))
+#
+ID_transform <- read.xlsx("../Data/02_Gene_Orth_Data.xlsx",sheetIndex = 1)%>%as.data.table()
+```
+##1.3. ID transform
+```{r}
+setkey(ID_transform,berghei)
+transID <- function(x){
+  y <- ID_transform[x]$falciparum
+  y <- subset(y,!is.na(y))
+  return(y)
+}
+```
+
+#2. DEseq2
+##2.1. 
+```{r}
+dds <- DESeqDataSetFromMatrix(countData = Rawcount,colData = Metadata,design = ~Group)
+dds <- dds[rowSums(counts(dds)) >9,]
+dds <- DESeq(dds)
+```
+##2.2.
+```{r}
+res_ori <- results(dds, contrast = c("Group", "CAPKO", "WT"))%>%as.data.frame() 
+res_ori$Gene <- rownames(res_ori)
+res_ori <- subset(res_ori,!is.na(res_ori$padj))
+#
+res_ori%<>%mutate(
+  Type=case_when(
+    padj < 0.05 & log2FoldChange > 1 ~ "Up",
+    padj < 0.05 & log2FoldChange < -1 ~ "Down",
+    TRUE ~ "No_sign"
+  )
+)
+res_ori$Type <- factor(res_ori$Type,levels = c("Up","No_sign","Down"))
+res_ori$Pfgene <- ID_transform[res_ori$Gene]$falciparum
+res_ori%<>%as.data.table()
+```
+
+#3. Volcano plot
+##3.1. 
+```{r}
+res_Up <- res_ori[Type=="Up"]
+setorder(res_Up,-log2FoldChange)
+res_Up <- head(res_Up,10)
+#
+res_Down <- res_ori[Type=="Down"]
+setorder(res_Down,log2FoldChange)
+res_Down <- head(res_Down,10)
+```
+##3.2 
+```{r,fig.width=6,fig.height=4}
+ggplot(res_ori,aes(x=log2FoldChange,y=-log10(padj)))+geom_point(aes(color=Type))+theme_bw()+
+  scale_color_manual(values = c("Red","grey","blue"))+
+  geom_hline(yintercept = c(-log10(0.05)),linetype=3,size=.8)+
+  geom_vline(xintercept = c(-1,1),linetype=3,size=.8)+
+  # scale_y_log10()+
+  geom_text_repel(data = res_Up,aes(label=Gene),size=4,
+                  box.padding = 1,max.overlaps = 1
+                  ,nudge_x = 1000,direction = "y",hjust= 1
+                  )+
+  geom_text_repel(data = res_Down,aes(label=Gene),size=4,
+                   box.padding = 1,max.overlaps = 1
+                  ,nudge_x = -1000,direction = "y",hjust= 1
+                  )+
+  xlim(c(-15,15))
+```
+
+#4.Enrich analysis
+##4.1. 
+```{r}
+res <- subset(res_ori,subset= res_ori$Type!="No_sign")
+gene <- transID(res$Gene)
+#
+GO <- enrichGO(gene , OrgDb = org.Pf.plasmo.db,keyType = "SYMBOL",ont = "all",pAdjustMethod = "BH") 
+#
+KEGG <- enrichKEGG(gene =gene,organism = 'pfa',   pvalueCutoff = 0.05)
+```
+##4.2.
+```{r,fig.width=7,fig.height=6}
+dotplot(GO)
+dotplot(KEGG)
+```
+
+#5. GSEA analysis
+##5.1. 
+```{r}
+res_ori_PF <- subset(res_ori,!is.na(res_ori$Pfgene))
+setorder(res_ori_PF,-log2FoldChange)
+genelist <- res_ori_PF$log2FoldChange
+names(genelist) <- res_ori_PF$Pfgene
+#
+GSEA_GO   <- gseGO(geneList = genelist
+                   ,ont = "BP"
+                   ,keyType = "SYMBOL"
+                   ,OrgDb= org.Pf.plasmo.db
+                   ,pvalueCutoff = 1
+                   ,pAdjustMethod = NULL
+                   ,seed = 100
+                   )
+```
+##5.2.
+```{r,fig.width = 5,fig.height=5}
+N <- grep("glycolipid biosynthetic process",GSEA_GO@result$Description)
+gseaNb(object =GSEA_GO,geneSetID = N)  
+```
+
+
+
+
+
+
