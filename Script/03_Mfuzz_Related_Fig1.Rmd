@@ -29,8 +29,8 @@ library(cowplot)
 ```
 ##1.2 data
 ```{r}
-Pbsce <- readRDS("../Data/01_02_Pb_seurat.Rds")
-Pfsce <- readRDS("../Data/02_02_Pf_seurat.Rds")
+Pbsce <- readRDS("../Data/01_01_Pb_seurat.Rds")
+Pfsce <- readRDS("../Data/01_02_Pf_seurat.Rds")
 ```
 #2. Mfuzz
 ##2.1. Making expression data

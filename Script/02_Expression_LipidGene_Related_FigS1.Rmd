@@ -27,8 +27,8 @@ library(grid)
 ```
 ##1.2. data
 ```{r}
-Pbsce <- readRDS("../Data/01_02_Pb_seurat.Rds")
-Pfsce <- readRDS("../Data/02_02_Pf_seurat.Rds")
+Pbsce <- readRDS("../Data/01_01_Pb_seurat.Rds")
+Pfsce <- readRDS("../Data/01_02_Pf_seurat.Rds")
 Lipid_gene <- read.xlsx("../Data/03_LipidGene.xlsx",sheetIndex = 1)%>%as.data.table()
 ```
 

@@ -24,8 +24,8 @@ library(scmap)
 ```
 ##1.3. seurat data
 ```{r}
-Pbsce <- readRDS("../Data/01_02_Pb_seurat.Rds")
-Pfsce <- readRDS("../Data/02_02_Pf_seurat.Rds")
+Pbsce <- readRDS("../Data/01_01_Pb_seurat.Rds")
+Pfsce <- readRDS("../Data/01_02_Pf_seurat.Rds")
 ```
 ##1.4. Orth data
 ```{r}
