@@ -10,7 +10,7 @@ The project includes raw count matrices and R scripts to analyze scRNA-seq of <I
    01_01_Pb_seurat.Rds, 01_02_Pf_seurat.Rds: SeuratObject of <I>P. falciparum</I> and <I>P. berghei</I>. Raw count matrices of scRNA-seq from [MCA](https://www.malariacellatlas.org).  
    02_Gene_Orth_Data.xlsx: One-to-one orthologs across ten Plasmodium species.
    03_LipidGene.xlsx: Gene involved in lipid metabolism of <I>P. falciparum</I>.  
-   04_RF_GeneInfo： Gene information for random forest.
+   04_RF_GeneInfo： Gene information for random forest.  
    05_raw_counts.txt:  raw count matrices of bulk RNA-seq.
    
 3) Analysis  
