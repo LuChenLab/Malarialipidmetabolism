@@ -17,16 +17,12 @@ library("clusterProfiler")
 library("data.table")
 library("ggplot2")
 library("ggpubr")
-library("vsn")
 library("reshape2")
-library("readr")
 library("rtracklayer")
-library("readxl")
 library("ggrepel")
 library("org.Pf.plasmo.db")
 library("GseaVis")
 library("dplyr")
-library("xlsx")
 ```
 ##1.2. data
 ```{r}
