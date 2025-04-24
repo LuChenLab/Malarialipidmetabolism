@@ -1,25 +1,84 @@
-# Malaria lipid metabolism
+# 🧬 Malaria Lipid Metabolism Analysis & MRS R Package
 
-Joint analysis of scRNA-seq from the IDC stages of <I>P. falciparum</I> and <I>P. berghei</I> led to the identification of a gene involved in lipid metabolism, named CAP. Experimental evidence indicates that CAP mediates its biosynthesis of phosphatidylcholine and phosphatidylethanolamine through interaction with the host CTL1.
+This repository includes:
 
-# Script guidance
+1. 🔍 **Data analysis scripts** to identify lipid metabolism-related genes in *Plasmodium* species using scRNA-seq and bulk RNA-seq.
+2. 📦 **MRS R package**, a PU-learning-based framework for gene classification using only positive samples.
 
-The project includes raw count matrices and R scripts to analyze scRNA-seq of <I>P. falciparum</I> and <I>P. berghei</I> parasite cells, along with bulk RNA-seq for CAP Knockout in <I>P. berghei</I>. For lipidomics analysis, we exclusively used [MetaboAnalystR](https://www.metaboanalyst.ca/docs/RTutorial.xhtml).
+---
 
-1) Data   
-   01_01_Pb_seurat.Rds, 01_02_Pf_seurat.Rds: SeuratObject of <I>P. falciparum</I> and <I>P. berghei</I>. Raw count matrices of scRNA-seq from [MCA](https://www.malariacellatlas.org).  
-   02_Gene_Orth_Data.xlsx: One-to-one orthologs across ten Plasmodium species.
-   03_LipidGene.xlsx: Gene involved in lipid metabolism of <I>P. falciparum</I>.  
-   04_RF_GeneInfo： Gene information for random forest.  
-   05_raw_counts.txt:  raw count matrices of bulk RNA-seq.
-   
-3) Analysis  
-   03_01_pb_cl.Rds, 03_02_pb_df.Rds, 03_03_pb_Mfuzzgene.Rds: SeuratObject of <I>P. falciparum</I>.  
-   03_04_pf_cl.Rds, 03_05_pf_df.Rds, 03_06_pf_Mfuzzgene.Rds: SeuratObject of <I>P. berghei</I>.  
-   
-5) Script  
-   01_Scmap_Related_Fig1.Rmd: [Scmap](https://www.cell.com/cell/fulltext/S0092-8674(21)00583-3?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867421005833%3Fshowall%3Dtrue](https://www.nature.com/articles/nmeth.4644)) performed stage clustering of single-cell transcriptomic data.  
-   02_Expression_LipidGene_Related_FigS1.Rmd: [ComplexHeatmap](https://academic.oup.com/bioinformatics/article/32/18/2847/1743594?login=false) demonstrated the dynamics of conserved lipid metabolism-related genes.  
-   03_Mfuzz_Related_Fig1.Rmd: [Mufzz](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2139991/) analysis found the genes with high expression in the mid- and late- trophozoite stages.  
-   04_Randomforest_Related_Fig1.Rmd: RandomForest analysis calculated lipid metabolism-related score for unknown function genes.   
-   05_DESeq2_Related_Fig3.Rmd: [DESeq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8) analyzed the transcriptome differences after CAP knockout.  
+## 📊 1. Malaria Lipid Metabolism Analysis
+
+We jointly analyzed scRNA-seq data from *Plasmodium falciparum* and *Plasmodium berghei* IDC stages. A lipid metabolism gene, **CAP**, was identified and shown to regulate phosphatidylcholine and phosphatidylethanolamine biosynthesis via interaction with host CTL1.
+
+### 📁 Dataset Overview
+
+| File | Description |
+|------|-------------|
+| `01_01_Pb_seurat.Rds`, `01_02_Pf_seurat.Rds` | Seurat objects from [Malaria Cell Atlas](https://www.malariacellatlas.org) |
+| `02_Gene_Orth_Data.xlsx` | One-to-one orthologs across *Plasmodium* species |
+| `03_LipidGene.xlsx` | Annotated lipid metabolism-related genes |
+| `04_RF_GeneInfo.xlsx` | Features for RF model |
+| `05_raw_counts.txt` | Bulk RNA-seq raw counts for CAP knockout |
+
+### 📜 Key Scripts
+
+| Script | Description |
+|--------|-------------|
+| `01_Scmap_Related_Fig1.Rmd` | Cell type/stage assignment using [scmap](https://www.nature.com/articles/nmeth.4644) |
+| `02_Expression_LipidGene_Related_FigS1.Rmd` | Gene expression heatmap using [ComplexHeatmap](https://academic.oup.com/bioinformatics/article/32/18/2847/1743594) |
+| `03_Mfuzz_Related_Fig1.Rmd` | Temporal clustering with [Mfuzz](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2139991/) |
+| `04_Randomforest_Related_Fig1.Rmd` | Lipid gene prediction via Random Forest |
+| `05_DESeq2_Related_Fig3.Rmd` | DE analysis of CAP knockout using [DESeq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8) |
+
+---
+
+## 🧠 2. MRS: Metabolism-Related Score Model
+
+MRS is a machine learning package built on [`caret`](https://github.com/topepo/caret), designed for binary classification problems where only **positive samples** are available.
+
+It implements a **Spy PU-learning** pipeline to identify reliable negatives, compares 10 classifiers, supports ablation-based feature selection, and provides end-to-end model evaluation.
+
+### ⚙️ Key Features
+
+- 🔎 Spy PU-learning with tunable parameters
+- 🧪 Model comparison (XGBoost, RF, SVM, etc.)
+- 🧬 Feature selection via ablation (optional)
+- 🧠 Final model tuning + performance visualization
+- 📈 PR / ROC curves for training and test sets
+
+---
+
+## 🚀 Getting Started
+
+### 🧰 Installation
+
+```r
+# Install from source
+devtools::install_local("MRS_1.0.0.tar.gz")
+# Step 1: Prepare data
+prep <- Prepare_classification_data(my_data)
+
+# Step 2 (optional): PU-learning
+pu_data <- Identify_reliable_negatives(prep$trainData, spy_ratio = 0.3, threshold_quantile = 0.05)
+
+# Step 3: Train and compare models
+models <- Train_multiple_models(prepared_data = prep)
+
+# Step 4: Evaluate training performance
+train_eval <- Evaluate_train_performance(models, prepared_data = prep)
+
+# Step 5: Evaluate test performance
+test_eval <- Evaluate_test_performance(models, prepared_data = prep)
+
+# Step 6 (optional): Feature selection
+fs_result <- Feature_selection_ablation(prepared_data = prep, model_name = "XGBoost")
+
+# Step 7: Final tuning
+final_model <- Tune_model_eval("XGBoost", prepared_data = fs_result)
+# PR Curve
+Plot_pr_curves(final_model$train_pr_list, final_model$test_pr, title = "Precision-Recall Curves")
+
+# ROC Curve
+Plot_roc_curves(final_model$train_roc_list, final_model$test_roc, title = "ROC Curves")
+```
