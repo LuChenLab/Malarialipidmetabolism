@@ -1,5 +1,7 @@
 # Malaria Lipid Metabolism Analysis & MRS R Package
 
+> All analyses and the MRS package were developed and tested using **R 4.0.2**.
+
 This repository includes:
 
 1. 📊 **Malaria Lipid Metabolism Analysis** — A computational pipeline based on single-cell RNA-seq and bulk RNA-seq to identify conserved lipid metabolism-related genes in *Plasmodium* species and prioritize functional candidates for downstream validation.
