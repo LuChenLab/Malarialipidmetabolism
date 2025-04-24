@@ -12,6 +12,8 @@ This repository includes:
 
 We jointly analyzed scRNA-seq data from *Plasmodium falciparum* and *Plasmodium berghei* IDC stages. A lipid metabolism gene, **CAP**, was identified and shown to regulate phosphatidylcholine and phosphatidylethanolamine biosynthesis via interaction with host CTL1.
 
+<img src="imgs/01_scRNA-seq_Data.png" alt="Malaria scRNA-seq data overview" width="800"/>
+
 ### 📁 Dataset Overview
 
 | File | Description |
@@ -39,6 +41,8 @@ We jointly analyzed scRNA-seq data from *Plasmodium falciparum* and *Plasmodium 
 MRS is a machine learning package built on [`caret`](https://github.com/topepo/caret), designed for binary classification problems where only **positive samples** are available.
 
 It implements a **Spy PU-learning** pipeline to identify reliable negatives, compares 10 classifiers, supports ablation-based feature selection, and provides end-to-end model evaluation.
+
+<img src="imgs/02_MRS.png" alt="MRS R package workflow" width="800"/>
 
 ### ⚙️ Key Features
 
