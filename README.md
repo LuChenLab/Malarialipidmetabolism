@@ -42,7 +42,7 @@ MRS is a machine learning package built on [`caret`](https://github.com/topepo/c
 
 It implements a **Spy PU-learning** pipeline to identify reliable negatives, compares 10 classifiers, supports ablation-based feature selection, and provides end-to-end model evaluation.
 
-<img src="image/02_MRS.png" alt="MRS R package workflow" width="600"/>
+<img src="image/02_MRS.png" alt="MRS R package workflow" width="1200"/>
 
 ### ⚙️ Key Features
 
