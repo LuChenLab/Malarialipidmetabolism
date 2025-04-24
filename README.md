@@ -82,3 +82,15 @@ Plot_pr_curves(final_model$train_pr_list, final_model$test_pr, title = "Precisio
 # ROC Curve
 Plot_roc_curves(final_model$train_roc_list, final_model$test_roc, title = "ROC Curves")
 ```
+
+---
+
+## 📚 References
+
+1. **Howick VM**, Russell AJC, Andrews T, Heaton H, Reid AJ, Natarajan K, Butungi H, Metcalf T, Verzier LH, Rayner JC, Berriman M, Herren JK, Billker O, Hemberg M, Talman AM, Lawniczak MKN. (2019). *The Malaria Cell Atlas: Single parasite transcriptomes across the complete Plasmodium life cycle*. **Science**, 365(6455):eaaw2619. https://doi.org/10.1126/science.aaw2619
+
+2. **Li X.** and **Liu B.** (2003). *Learning to classify texts using positive and unlabeled data*. In *Proceedings of the 18th International Joint Conference on Artificial Intelligence (IJCAI'03)*, Acapulco, Mexico, pp. 587–592.
+
+3. **Liu B.**, **Dai Y.**, **Li X.**, **Lee W.S.**, and **Yu P.S.** (2003). *Building text classifiers using positive and unlabeled examples*. In *Proceedings of the Third IEEE International Conference on Data Mining (ICDM)*, pp. 179–186. https://doi.org/10.1109/ICDM.2003.1250918
+
+4. **Kuhn M.** (2008). *Building Predictive Models in R Using the caret Package*. **Journal of Statistical Software**, 28(5), 1–26. https://doi.org/10.18637/jss.v028.i05
