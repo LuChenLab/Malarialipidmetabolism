@@ -1,4 +1,4 @@
-# 🧬 Malaria Lipid Metabolism Analysis & MRS R Package
+# Malaria Lipid Metabolism Analysis & MRS R Package
 
 This repository includes:
 
@@ -41,17 +41,15 @@ It implements a **Spy PU-learning** pipeline to identify reliable negatives, com
 
 ### ⚙️ Key Features
 
-- 🔎 Spy PU-learning with tunable parameters
-- 🧪 Model comparison (XGBoost, RF, SVM, etc.)
-- 🧬 Feature selection via ablation (optional)
-- 🧠 Final model tuning + performance visualization
-- 📈 PR / ROC curves for training and test sets
+- Spy PU-learning with tunable parameters
+- Model comparison (XGBoost, RF, SVM, etc.)
+- Feature selection via ablation (optional)
+- Final model tuning + performance visualization
+-  PR / ROC curves for training and test sets
 
 ---
 
 ## 🚀 Getting Started
-
-### 🧰 Installation
 
 ```r
 # Install from source
