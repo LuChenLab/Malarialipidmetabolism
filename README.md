@@ -14,7 +14,12 @@ We jointly analyzed scRNA-seq data from *Plasmodium falciparum* and *Plasmodium 
 
 <div align="center">
   <img src="image/01_scRNA-seq_Data.png" alt="Malaria scRNA-seq data overview" width="650"/>
-  <p><em>Figure 1. UMAP visualization of IDC-stage single-cell transcriptomes for <i>P. falciparum</i> and <i>P. berghei</i>, downloaded from the <a href="https://www.malariacellatlas.org" target="_blank">Malaria Cell Atlas</a>.</em></p>
+  <p>
+  <strong>Figure 1.</strong>
+  UMAP visualization of IDC-stage scRNA-seq for
+  <i>P. falciparum</i> and <i>P. berghei</i>, downloaded from the
+  <a href="https://www.malariacellatlas.org" target="_blank">Malaria Cell Atlas</a>.
+</p>
 </div>
 
 ### 📁 Dataset Overview
