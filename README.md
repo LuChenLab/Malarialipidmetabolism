@@ -47,8 +47,6 @@ It implements a **Spy PU-learning** pipeline to identify reliable negatives, com
 - Final model tuning + performance visualization
 -  PR / ROC curves for training and test sets
 
----
-
 ## 🚀 Getting Started
 
 ```r
