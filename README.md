@@ -52,6 +52,7 @@ It implements a **Spy PU-learning** pipeline to identify reliable negatives, com
 ```r
 # Install from source
 devtools::install_local("MRS_1.0.0.tar.gz")
+
 # Step 1: Prepare data
 prep <- Prepare_classification_data(my_data)
 
@@ -72,6 +73,8 @@ fs_result <- Feature_selection_ablation(prepared_data = prep, model_name = "XGBo
 
 # Step 7: Final tuning
 final_model <- Tune_model_eval("XGBoost", prepared_data = fs_result)
+
+# Step 8: Plotting
 # PR Curve
 Plot_pr_curves(final_model$train_pr_list, final_model$test_pr, title = "Precision-Recall Curves")
 
