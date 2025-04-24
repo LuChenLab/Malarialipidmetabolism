@@ -52,12 +52,9 @@ It implements a **Spy PU-learning** pipeline to identify reliable negatives, com
 
 <div align="center">
   <img src="image/02_MRS.png" alt="MRS R package workflow" width="1200"/>
+  <p><strong>Figure 2.</strong> Workflow of the MRS package for PU-learning-based gene classification.</p>
 </div>
-<p>
-  <strong>Figure 2.</strong>
-  Workflow of the MRS R package for gene classification using PU-learning,
-  including reliable negative identification, model comparison, feature selection, and final tuning.
-</p>
+
 
 ### ⚙️ Key Features
 
