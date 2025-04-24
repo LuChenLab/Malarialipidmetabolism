@@ -12,7 +12,9 @@ This repository includes:
 
 We jointly analyzed scRNA-seq data from *Plasmodium falciparum* and *Plasmodium berghei* IDC stages. A lipid metabolism gene, **CAP**, was identified and shown to regulate phosphatidylcholine and phosphatidylethanolamine biosynthesis via interaction with host CTL1.
 
-<img src="image/01_scRNA-seq_Data.png" alt="Malaria scRNA-seq data overview" width="600"/>
+<div align="center">
+  <img src="image/01_scRNA-seq_Data.png" alt="Malaria scRNA-seq data overview" width="500"/>
+</div>
 
 ### 📁 Dataset Overview
 
