@@ -2,8 +2,8 @@
 
 This repository includes:
 
-1. 🔍 **Data analysis scripts** to identify lipid metabolism-related genes in *Plasmodium* species using scRNA-seq and bulk RNA-seq.
-2. 📦 **MRS R package**, a PU-learning-based framework for gene classification using only positive samples.
+📊 1. Malaria Lipid Metabolism Analysis using scRNA-seq and bulk RNA-seq to identify conserved genes involved in lipid metabolism in Plasmodium species, and prioritize candidates for downstream validation.
+🤖 2. MRS R package, a PU-learning-based framework for gene classification using only positive samples..
 
 ---
 
@@ -33,7 +33,7 @@ We jointly analyzed scRNA-seq data from *Plasmodium falciparum* and *Plasmodium 
 
 ---
 
-## 🧠 2. MRS: Metabolism-Related Score Model
+## 🤖 2. MRS: Metabolism-Related Score Model
 
 MRS is a machine learning package built on [`caret`](https://github.com/topepo/caret), designed for binary classification problems where only **positive samples** are available.
 
