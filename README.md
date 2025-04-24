@@ -65,6 +65,9 @@ It implements a **Spy PU-learning** pipeline to identify reliable negatives, com
 - Feature selection via ablation (optional)
 - Final model tuning + performance visualization
 
+## 💻 Environment & Dependencies
+The MRS package was developed under R version 4.0.2, and depends on core packages including caretpROC, PRROC, and doParallel, among others. Please refer to the package DESCRIPTION file for a complete list and version requirements.
+
 ## 🚀 Getting Started
 
 ```r
