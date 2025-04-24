@@ -6,7 +6,7 @@ This repository includes:
 
 1. 📊 **Malaria Lipid Metabolism Analysis** — A computational pipeline based on single-cell RNA-seq and bulk RNA-seq to identify conserved lipid metabolism-related genes in *Plasmodium* species and prioritize functional candidates for downstream validation.
 
-2. 🤖 **MRS R Package** — A machine learning framework built on PU-learning (positive-unlabeled learning), designed for gene classification in datasets containing only positive samples. Includes model comparison, feature selection, and final model training.
+2. 🤖 **MRS (Metabolism-Related Score) R Package** — A machine learning framework built on PU-learning (positive-unlabeled learning), designed for gene classification in datasets containing only positive samples. Includes model comparison, feature selection, and final model training.
 
 ---
 
