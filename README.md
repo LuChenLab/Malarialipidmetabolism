@@ -6,7 +6,7 @@ This repository includes:
 
 1. 📊 **Malaria Lipid Metabolism Analysis** — A computational pipeline based on single-cell RNA-seq and bulk RNA-seq to identify conserved lipid metabolism-related genes in *Plasmodium* species and prioritize functional candidates for downstream validation.
 
-2. 🤖 **MRS (Metabolism-Related Score) R Package** — A machine learning framework built on PU-learning (positive-unlabeled learning), designed for gene classification in datasets containing only positive samples. Includes model comparison, feature selection, and final model training.
+2. 🤖 **MRS (Metabolism-Related Score) R Package** — A machine learning framework built on Spy-PU learning (Spy-based positive-unlabeled learning), designed for gene classification in datasets containing only positive samples. Includes model comparison, feature selection, and final model training.
 
 ---
 
@@ -50,17 +50,17 @@ We jointly analyzed scRNA-seq data from *Plasmodium falciparum* and *Plasmodium 
 
 MRS is a machine learning package built on [`caret`](https://github.com/topepo/caret), designed for binary classification problems where only **positive samples** are available.
 
-It implements a **Spy PU-learning** pipeline to identify reliable negatives, compares 10 classifiers, supports ablation-based feature selection, and provides end-to-end model evaluation.
+It implements a **Spy-PU learning** pipeline to identify reliable negatives, compares 10 classifiers, supports ablation-based feature selection, and provides end-to-end model evaluation.
 
 <div align="center">
   <img src="image/02_MRS.png" alt="MRS R package workflow" width="1600"/>
-  <p><strong>Figure 2.</strong> Workflow of the MRS package for Spy PU-learning-based gene classification.</p>
+  <p><strong>Figure 2.</strong> Workflow of the MRS package for Spy-PU learning-based gene classification.</p>
 </div>
 
 
 ### ⚙️ Key Features
 
-- Spy PU-learning with tunable parameters
+- Spy-PU learning with tunable parameters
 - Model comparison (XGBoost, RF, SVM, etc.)
 - Feature selection via ablation (optional)
 - Final model tuning + performance visualization
