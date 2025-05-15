@@ -1,0 +1,206 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1 loading package and data
+##1.1 
+```{r}
+library(Seurat)
+library(Matrix)
+library(magrittr)
+library(ggplot2)
+library(data.table)
+library(RColorBrewer)
+library(dplyr)
+library(scmap)
+```
+##1.2.
+```{r}
+Sciecnce_pb <- readRDS("../Analysis/01_pb_IDE_sc.Rds")
+Sciecnce_pf <- readRDS("../Analysis/01_pf_IDE_sc.Rds")
+```
+##1.3. 
+```{r}
+Orth <- readRDS("../Data/01_03_Gene_Orth_Data.Rds")
+```
+
+#2. Scmap
+##2.1. 
+```{r}
+PBANKA <- Orth$berghei
+PBANKA <- gsub("_","-",PBANKA)
+PBANKA <- PBANKA[which(PBANKA%in%rownames(Sciecnce_pb))]
+PF3D7  <- Orth$falciparum
+PF3D7 <- gsub("_","-",PF3D7)
+PF3D7 <- PF3D7[which(PF3D7%in%rownames(Sciecnce_pf))]
+PF3D7_bp <- Orth$berghei[which(gsub("_","-",Orth$falciparum)%in%PF3D7)]
+PF3D7_bp <- gsub("_","-",PF3D7_bp)
+Final_Pb <- intersect(PF3D7_bp,PBANKA)
+Final_Pf3D7 <- Orth$falciparum[which(gsub("_","-",Orth$berghei)%in%Final_Pb)]
+Final_Pf3D7 <- gsub("_", "-", Final_Pf3D7)
+identical(Orth$berghei%in%gsub("-","_",Final_Pb),Orth$falciparum%in%gsub("-","_",Final_Pf3D7))
+rm(PBANKA,PF3D7,PF3D7_bp)
+DF <- data.table(
+  PB_Name = Final_Pb,
+  PF_Name = Final_Pf3D7
+)
+```
+
+##2.2. Ring
+###2.2.1.
+```{r}
+Sciecnce_pb_ring <- subset(Sciecnce_pb,Cluster%in%c("Early_ring","Late_ring"))
+Sciecnce_pf_ring <- subset(Sciecnce_pf,STAGE_LR%in%c("ring"))
+```
+###2.2.2.  
+```{r}
+Sciecnce_pb_ring <- subset(Sciecnce_pb_ring,features = DF$PB_Name)
+Sciecnce_pb_ring  <-  as.SingleCellExperiment(Sciecnce_pb_ring)
+pf_couts <- Sciecnce_pf_ring@assays$RNA@counts[DF$PF_Name,]
+rownames(pf_couts) <- DF$PB_Name
+pf_logcounts <- Sciecnce_pf_ring@assays$RNA@data[DF$PF_Name,]
+rownames(pf_logcounts) <- DF$PB_Name
+Sciecnce_pf_ring <- SingleCellExperiment(assays=list(counts=pf_couts, logcounts=pf_logcounts),
+                                          reducedDims=SimpleList(PCA=Sciecnce_pf_ring@reductions$pca, uMAP=Sciecnce_pf_ring@reductions$umap))
+
+```
+###2.2.3.  选择基因以及确定分类对象
+```{r}
+rowData(Sciecnce_pb_ring)$feature_symbol <- rownames(Sciecnce_pb_ring) 
+Sciecnce_pb_ring  <- scmap::selectFeatures(Sciecnce_pb_ring , n_features = 3000,suppress_plot = T)
+Sciecnce_pb_ring <- indexCluster(Sciecnce_pb_ring,cluster_col = "Cluster")
+```
+###2.2.4.  index
+```{r}
+rowData(Sciecnce_pf_ring)$feature_symbol <- rownames(Sciecnce_pf_ring) 
+scmapCluster_results_ring <- scmapCluster(     
+        projection = Sciecnce_pf_ring,      
+        index_list = list(         
+            pb = metadata(Sciecnce_pb_ring)$scmap_cluster_index     
+        ),threshold = 0
+ )
+scmapCluster_results_ring$combined_labs%>%table()
+```
+###2.2.5.
+```{r}
+Sciecnce_pf_ring <- subset(Sciecnce_pf,STAGE_LR%in%c("ring"))
+Sciecnce_pf_ring$Scmap <- scmapCluster_results_ring$combined_labs
+UMAPPlot(Sciecnce_pf_ring,group.by="Scmap")
+```
+
+##2.3. troph
+###2.3.1.
+```{r}
+Sciecnce_pb_troph <-  subset(Sciecnce_pb,Cluster%in%c("Early_troph","Mid_troph","Late_troph"))
+Sciecnce_pf_troph <- subset(Sciecnce_pf,STAGE_LR%in%c("trophozoite"))
+```
+###2.3.2.  
+```{r}
+Sciecnce_pb_troph <- subset(Sciecnce_pb_troph,features = DF$PB_Name)
+Sciecnce_pb_troph  <-  as.SingleCellExperiment(Sciecnce_pb_troph)
+pf_couts <- Sciecnce_pf_troph@assays$RNA@counts[DF$PF_Name,]
+rownames(pf_couts) <- DF$PB_Name
+pf_logcounts <- Sciecnce_pf_troph@assays$RNA@data[DF$PF_Name,]
+rownames(pf_logcounts) <- DF$PB_Name
+Sciecnce_pf_troph <- SingleCellExperiment(assays=list(counts=pf_couts, logcounts=pf_logcounts),
+                                          reducedDims=SimpleList(PCA=Sciecnce_pf_troph@reductions$pca, uMAP=Sciecnce_pf_troph@reductions$umap))
+```
+###2.3.3.
+```{r}
+rowData(Sciecnce_pb_troph)$feature_symbol <- rownames(Sciecnce_pb_troph) 
+Sciecnce_pb_troph  <- scmap::selectFeatures(Sciecnce_pb_troph , n_features = 3000,suppress_plot = T)
+Sciecnce_pb_troph <- indexCluster(Sciecnce_pb_troph,cluster_col = "Cluster")
+```
+###2.3.4.
+```{r}
+rowData(Sciecnce_pf_troph)$feature_symbol <- rownames(Sciecnce_pf_troph) 
+scmapCluster_results_troph <- scmapCluster(     
+        projection = Sciecnce_pf_troph,      
+        index_list = list(         
+            pb = metadata(Sciecnce_pb_troph)$scmap_cluster_index     
+        ),threshold = 0
+ )
+scmapCluster_results_troph$combined_labs%>%table()
+```
+###2.3.5.
+```{r}
+Sciecnce_pf_troph <- subset(Sciecnce_pf,STAGE_LR%in%c("trophozoite"))
+Sciecnce_pf_troph$Scmap <- scmapCluster_results_troph$combined_labs
+UMAPPlot(Sciecnce_pf_troph,group.by="Scmap")
+```
+##2.4. schi
+###2.4.1.
+```{r}
+Sciecnce_pb_schi <- subset(Sciecnce_pb,Cluster%in%c("Early_schi","Mid_schi","Late_schi"))
+Sciecnce_pf_schi <-  subset(Sciecnce_pf,STAGE_LR%in%c("schizont"))
+```
+###2.4.1.  
+```{r}
+Sciecnce_pb_schi <- subset(Sciecnce_pb_schi,features = DF$PB_Name)
+Sciecnce_pb_schi  <-  as.SingleCellExperiment(Sciecnce_pb_schi)
+pf_couts <- Sciecnce_pf_schi@assays$RNA@counts[DF$PF_Name,]
+rownames(pf_couts) <- DF$PB_Name
+pf_logcounts <- Sciecnce_pf_schi@assays$RNA@data[DF$PF_Name,]
+rownames(pf_logcounts) <- DF$PB_Name
+Sciecnce_pf_schi <- SingleCellExperiment(assays=list(counts=pf_couts, logcounts=pf_logcounts),
+                                          reducedDims=SimpleList(PCA=Sciecnce_pf_schi@reductions$pca, uMAP=Sciecnce_pf_schi@reductions$umap))
+
+```
+###2.4.2.
+```{r}
+rowData(Sciecnce_pb_schi)$feature_symbol <- rownames(Sciecnce_pb_schi) 
+Sciecnce_pb_schi  <- scmap::selectFeatures(Sciecnce_pb_schi , n_features = 3000,suppress_plot = T)
+Sciecnce_pb_schi <- indexCluster(Sciecnce_pb_schi,cluster_col = "Cluster")
+```
+###2.4.3.  index
+```{r}
+rowData(Sciecnce_pf_schi)$feature_symbol <- rownames(Sciecnce_pf_schi) 
+scmapCluster_results_schi <- scmapCluster(     
+        projection = Sciecnce_pf_schi,      
+        index_list = list(         
+            pb = metadata(Sciecnce_pb_schi)$scmap_cluster_index     
+        ),threshold = 0
+ )
+scmapCluster_results_schi$combined_labs%>%table()
+```
+###2.4.4.
+```{r}
+Sciecnce_pf_schi <-  subset(Sciecnce_pf,STAGE_LR%in%c("schizont"))
+Sciecnce_pf_schi$Scmap <- scmapCluster_results_schi$combined_labs
+UMAPPlot(Sciecnce_pf_schi,group.by="Scmap")
+```
+
+##2.5.
+###2.5.1. 
+```{r,fig.width=6.5,fig.height=5}
+Data <- do.call(rbind,list(Sciecnce_pf_ring@meta.data,Sciecnce_pf_troph@meta.data,Sciecnce_pf_schi@meta.data))
+Data$Scmap%<>%as.character()
+Sciecnce_pf$Scmap <- Data[colnames(Sciecnce_pf),]$Scmap
+#
+Sciecnce_pf$Scmap <- factor(
+  Sciecnce_pf$Scmap ,
+  levels = c(
+    "Early_ring",
+    "Late_ring",
+    "Early_troph",
+    "Mid_troph",
+    "Late_troph",
+    "Early_schi",
+    "Mid_schi",
+    "Late_schi"
+  )
+)
+#
+UMAPPlot(Sciecnce_pf,group.by="Scmap")+scale_color_manual(values = c("#82CBEB", "#3182bd", "#A4EF8D", "#4ACC41", "#20922C", "#F5947B","#de2d26","#9F1325"))+
+  scale_x_reverse()+scale_y_reverse()
+```
+###2.5.2. 
+```{r}
+saveRDS(Sciecnce_pf,"../Analysis/01_pf_IDE_sc.Rds")
+```
+

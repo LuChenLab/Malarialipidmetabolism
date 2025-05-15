@@ -1,0 +1,110 @@
+---
+title: "Making_SeuratObject_Pb"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1. loading package and data
+##1.1 
+```{r}
+library(Seurat)
+library(Matrix)
+library(magrittr)
+library(data.table)
+library(dplyr)
+library(ggplot2)
+```
+##1.2. 
+```{r}
+# Datasets form MCA (Malaria Cell Atlas) https://www.malariacellatlas.org
+SJ_count_1 <- read.csv("../Data/01_01_Pb_10X/01_pb10xIDC_counts_part1.csv", row.names = 1)%>%as.matrix()#%>%as("dgCMatrix")
+SJ_count_2 <- read.csv("../Data/01_01_Pb_10X/01_pb10xIDC_counts_part2.csv", row.names = 1)%>%as.matrix()#%>%as("dgCMatrix")
+SJ_count <- cbind(SJ_count_1,SJ_count_2)
+Info <- read.csv("../Data/01_01_Pb_10X/01_pb10xIDC_pheno.csv", row.names = 1)
+```
+
+#2 seurat
+##2.1 
+```{r}
+#
+sce.big <- SeuratObject::CreateSeuratObject(counts = SJ_count,meta.data = Info)
+sce.big  %<>% Seurat::NormalizeData() %>%          
+FindVariableFeatures(selection.method = "vst", nfeatures = 2000) %>% 
+ScaleData(features=rownames(sce.big)) 
+sce.big <- RunPCA(sce.big, npcs = 30, verbose = FALSE)
+#
+sce.big <- RunUMAP(sce.big, reduction = "pca", dims = 1:10)
+sce.big <- RunTSNE(sce.big, reduction = "pca", dims = 1:10)
+sce.big <- FindNeighbors(sce.big, reduction = "pca", dims = 1:10)
+sce.big <- FindClusters(sce.big, resolution = 0.5)
+```
+##2.3 
+###2.3.1. 
+```{r}
+#
+sce.big@meta.data %<>%mutate(
+  Stage=case_when(
+    stage_pred=="6"~"Ring",
+    stage_pred=="2"~"Ring",
+    stage_pred=="0"~"Troph",
+    stage_pred=="1"~"Troph",
+    stage_pred=="3"~"Troph",
+    stage_pred=="4"~"Schi",
+    stage_pred=="7"~"Schi",
+    stage_pred=="5"~"Schi",
+  )
+)
+sce.big$Stage <- factor(sce.big$Stage,levels = c("Ring","Troph","Schi"))
+```
+###2.3.2. 
+```{r}
+#
+sce.big@meta.data %<>%mutate(
+  Cluster=case_when(
+    stage_pred=="6"~"Early_ring",
+    stage_pred=="2"~"Late_ring",
+    stage_pred=="0"~"Early_troph",
+    stage_pred=="1"~"Mid_troph",
+    stage_pred=="3"~"Late_troph",
+    stage_pred=="4"~"Early_schi",
+    stage_pred=="7"~"Mid_schi",
+    stage_pred=="5"~"Late_schi",
+  )
+)
+sce.big$Cluster <- factor(sce.big$Cluster,levels = c("Early_ring","Late_ring","Early_troph","Mid_troph","Late_troph","Early_schi","Mid_schi","Late_schi"))
+```
+###2.3.3. 
+```{r}
+sce.big@meta.data %<>%mutate(
+  Cluster_sim=case_when(
+    stage_pred=="6"~"ER",
+    stage_pred=="2"~"LR",
+    stage_pred=="0"~"ET",
+    stage_pred=="1"~"MT",
+    stage_pred=="3"~"LT",
+    stage_pred=="4"~"ES",
+    stage_pred=="7"~"MS",
+    stage_pred=="5"~"LS",
+  )
+)
+sce.big$Cluster_sim <- factor(sce.big$Cluster_sim,levels = c("ER","LR","ET","MT","LT","ES","MS","LS"))
+```
+##2.4. 
+###2.4.1. 
+```{r,fig.width=6,fig.height=4.5}
+UMAPPlot(sce.big,group.by="Cluster")+scale_color_manual(values = c("#82CBEB", "#3182bd", "#A4EF8D", "#4ACC41", "#20922C", "#F5947B","#de2d26","#9F1325"))
+```
+###2.4.2. 
+```{r}
+sce.big@meta.data <- sce.big@meta.data[,c("orig.ident","nCount_RNA","nFeature_RNA","nGene","nUMI","Stage","Cluster","Cluster_sim")]
+saveRDS(sce.big,"../Analysis/01_pb_IDE_sc.Rds")
+```
+
+##2.5.
+```{r}
+sessionInfo()
+```
+

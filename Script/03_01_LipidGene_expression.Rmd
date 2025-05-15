@@ -1,0 +1,127 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1 loading package and data
+##1.1 package
+```{r}
+library(Seurat)
+library(data.table)
+library(magrittr)
+library(grid)
+library(ComplexHeatmap)
+```
+##1.2. 
+```{r}
+GFF <- readRDS("../Data/03_GeneInfo_forML.Rds")
+GFF <- GFF[Label==1,c("ID","PBName","Name","description"),]
+#
+GFF$GeneName <- GFF$Name
+GFF$GeneName[which(is.na(GFF$GeneName))] <- GFF$description[which(is.na(GFF$GeneName))]
+GFF$GeneName <- paste0(GFF$ID,", ",GFF$GeneName)
+#
+GFF$Conserved <- "1"
+GFF$Conserved[which(is.na(GFF$PBName))] <- "0"
+#
+GFF$Name[which(is.na(GFF$Name))] <- GFF$description[which(is.na(GFF$Name))]
+```
+##1.3.
+```{r}
+pb_sce.big <- readRDS("../Analysis/01_pb_IDE_sc.Rds")
+pf_sce.big <-  readRDS("../Analysis/01_pf_IDE_sc.Rds")
+```
+
+#2. Heatmap
+##2.1. 
+```{r}
+PF_cycle <- AverageExpression(pf_sce.big,group.by = "Scmap")
+PF_cycle <- PF_cycle$RNA
+rownames(PF_cycle) <- gsub("-","_",rownames(PF_cycle))
+colnames(PF_cycle) <- gsub(" ","",colnames(PF_cycle))
+Gene <- rownames(PF_cycle)[grep("\\.",rownames(PF_cycle))]
+PF_cycle1 <- PF_cycle[setdiff(c(1:nrow(PF_cycle)),Gene),]
+PF_cycle2 <- PF_cycle[Gene,]
+Gene <- gsub("\\..*$","",rownames(PF_cycle2))
+PF_cycle2%<>%as.data.table()
+PF_cycle2$Gene <- Gene
+PF_cycle2 <- aggregate(. ~ Gene, data=PF_cycle2, FUN=mean)
+Gene <- PF_cycle2$Gene
+PF_cycle2 <- as.matrix(PF_cycle2[,-1]) 
+rownames(PF_cycle2) <- Gene
+PF_cycle <- rbind(PF_cycle1,PF_cycle2)
+rm(Gene,PF_cycle1,PF_cycle2)
+PF_cycle <- PF_cycle[rownames(PF_cycle)%in%GFF$ID,]
+```
+##2.2. 
+```{r}
+PB_cycle <- AverageExpression(pb_sce.big,group.by = "Cluster")
+PB_cycle <- PB_cycle$RNA
+rownames(PB_cycle) <- gsub("-","_",rownames(PB_cycle))
+colnames(PB_cycle) <- gsub(" ","",colnames(PB_cycle))
+```
+##2.3. 
+```{r}
+PF_cycle%<>%t()%>%scale()%>%t()
+colnames(PF_cycle) <- c("ER","MR","ET","MT","LT","ES","MS","LS")
+PF_cycle <- PF_cycle[GFF$ID,]
+rownames(PF_cycle) <- GFF$GeneName
+```
+##2.4. 
+```{r}
+PB_cycle%<>%t()%>%scale()%>%t()
+colnames(PB_cycle) <- c("ER","MR","ET","MT","LT","ES","MS","LS")
+#
+pb_express_sub <- matrix(0,nrow = 27,ncol = 8)
+colnames(pb_express_sub) <- colnames(PB_cycle)
+rownames(pb_express_sub) <- GFF$ID[which(is.na(GFF$PBName))]
+PB_cycle <- rbind(PB_cycle,pb_express_sub)
+#
+GFF$PBName[which(is.na(GFF$PBName))] <- GFF$ID[which(is.na(GFF$PBName))]
+PB_cycle <- PB_cycle[GFF$PBName,]
+rownames(PB_cycle) <- GFF$GeneName
+```
+###2.5.
+```{r,fig.height=19,fig.width=7.5}
+#
+gene_info <- data.frame(
+  row.names = GFF$GeneName,
+  Info = GFF$Conserved
+)
+#
+p1 <- ComplexHeatmap::Heatmap(PF_cycle,
+                              cluster_rows = T,cluster_columns = F,show_row_names = T,show_column_names = T,row_names_side = "left",
+                              # col=colorRampPalette(rev(brewer.pal(n = 11, name ="RdBu")))(100),
+                              col=circlize::colorRamp2(c(-1, 0, 1), c("#2166AC", "white", "#B2182B")),
+                              row_title = c("","",""),
+                              row_split = 3,
+                              show_row_dend = F,
+                              show_heatmap_legend = F,
+                              column_title = "P. falciparum",
+                              column_names_side = "top",column_names_rot = 45,clustering_method_rows = "complete",
+                              border = T,border_gp = gpar(col = 'black', lwd = 1)
+                              )  
+p2 <-ComplexHeatmap::Heatmap(PB_cycle,
+                             cluster_rows = T,cluster_columns = F,show_row_names = T,show_column_names = T,row_names_side = "left",
+                             # col=colorRampPalette(rev(brewer.pal(n = 11, name ="RdBu")))(100),
+                                 col=circlize::colorRamp2(c(-1, 0, 1), c("#2166AC", "white", "#B2182B")),
+                             name = "Expression",
+                             row_split =3,
+                             column_title = "P. berghei",
+                             column_names_side = "top",column_names_rot = 45,clustering_method_rows = "complete",
+                             border = T,border_gp = gpar(col = 'black', lwd = 1),
+                             right_annotation = rowAnnotation(
+                               df = gene_info,
+                               col = list(Info=c("0"="#DDDDDD","1"="#E6B745"))
+                             )
+                             )
+
+set.seed(123)
+p1+p2
+```
+
+

@@ -1,0 +1,161 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1 loading package
+```{r}
+library(magrittr)
+library(ggplot2)
+library(data.table)
+library(RColorBrewer)
+library(dplyr)
+library(clusterProfiler)
+library(org.Pf.plasmo.db)
+library(VennDiagram)
+library(ggpubr)
+```
+
+#2. Veen Plot
+##2.1. 
+```{r}
+Pf_gene_ori <- readRDS("../Analysis/02_01_pf_mfuzz_gene.Rds")
+Pb_gene_ori <- readRDS("../Analysis/02_01_pb_mfuzz_gene.Rds")
+#
+Pb_gene_ori$Pf_gene[which(is.na(Pb_gene_ori$Pf_gene))] <- Pb_gene_ori$Pb_gene[which(is.na(Pb_gene_ori$Pf_gene))]
+```
+##2.2.  
+```{r}
+venn.plot <- venn.diagram(
+  x = list(
+    B=Pf_gene_ori$Pf_gene,
+    C=Pb_gene_ori$Pf_gene
+    ),
+  category = c("P. fal","P. ber"),
+  filename = NULL,
+  fill =  c("#8BB399", "#E1BB74"),
+  lty = "blank", 
+  cex = 1.5,
+  cat.cex = 1.6,
+  col = "transparent",
+  fontfamily = "serif",
+  fontface = "bold",
+  cat.dist=c(.07,.07),
+  cat.pos=c(-25,25),
+  margin=.1,
+  cat.fontfamily = "serif",
+  print.mode = c("raw","percent"),
+  scaled=T
+  )
+ grid.draw(venn.plot)
+ system("rm VennDiagram*log")
+```
+
+
+#3. Gene ontology
+##3.1. 
+```{r}
+Pf_gene_ori <- readRDS("../Analysis/02_01_pf_mfuzz_gene.Rds")
+Pb_gene_ori <- readRDS("../Analysis/02_01_pb_mfuzz_gene.Rds")
+```
+##3.2. 
+```{r}
+gc <- list(Pf=Pf_gene_ori$Pf_gene,
+           Pb=subset(Pb_gene_ori$Pf_gene,!is.na(Pb_gene_ori$Pf_gene))
+           )
+```
+##3.3. 
+```{r,fig.height=10,fig.width=8}
+#
+Go_BP_pf <- enrichGO(gc$Pf, OrgDb='org.Pf.plasmo.db',keyType = "SYMBOL",ont= "BP",pAdjustMethod="BH")
+Go_BP_pf <- Go_BP_pf@result
+Go_BP_pf$Cluster <- "Pf"
+Go_BP_pf%<>%as.data.table()
+Go_BP_pf <- Go_BP_pf[,c(10,1:9)]
+
+#
+Go_BP_pb <- enrichGO(gc$Pb, OrgDb='org.Pf.plasmo.db',keyType = "SYMBOL",ont= "BP")
+Go_BP_pb <- Go_BP_pb@result
+Go_BP_pb$Cluster <- "Pb"
+Go_BP_pb%<>%as.data.table()
+Go_BP_pb <- Go_BP_pb[,c(10,1:9)]
+#
+Go_BP_data <- rbind(Go_BP_pf,Go_BP_pb)
+Go_BP_data <- subset(Go_BP_data , qvalue < 0.05) 
+which(Go_BP_data$Description%>%table()>=2)
+#
+Go_BP_data <- Go_BP_data[Go_BP_data$Description%in%c(
+  #
+  "glycerolipid metabolic process",
+  "cell cycle",
+  "DNA replication initiation",
+  "catabolic process",
+  "phosphatidylinositol metabolic process"
+),]
+Go_BP_data$Type <- "GO(BP)"
+```
+##3.4. 
+```{r,fig.width=7,fig.height=5}
+KEGG_pf <- enrichKEGG(gc$Pf,organism="pfa")
+KEGG_pf <- KEGG_pf@result
+KEGG_pf$Cluster <- "Pf"
+KEGG_pf%<>%as.data.table()
+KEGG_pf <- KEGG_pf[,c(10,1:9)]
+
+#
+KEGG_pb <- enrichKEGG(gc$Pb,organism="pfa")
+KEGG_pb <- KEGG_pb@result
+KEGG_pb$Cluster <- "Pb"
+KEGG_pb%<>%as.data.table()
+KEGG_pb <- KEGG_pb[,c(10,1:9)]
+
+#
+KEGG_data <- rbind(KEGG_pf,KEGG_pb)
+KEGG_data$Description <- gsub(" - Plasmodium falciparum 3D7","",KEGG_data$Description)
+KEGG_data <- subset(KEGG_data , qvalue < 0.05)
+KEGG_data <- KEGG_data[KEGG_data$Description%in%c(
+  "Metabolic pathways",
+  "Glycosylphosphatidylinositol (GPI)-anchor biosynthesis"
+),]
+KEGG_data$Type <- "KEGG"
+```
+##3.5. 
+###3.5.1. 
+```{r}
+#
+plot_data <- rbind(Go_BP_data,KEGG_data)
+plot_data%<>%mutate(
+  Strain=case_when(
+  Cluster=="Pf"~"P. falciparum",  
+  Cluster=="Pb"~"P. berghei"  
+  )
+)
+plot_data$Strain <- factor(plot_data$Strain,levels = c("P. falciparum","P. berghei"))
+plot_data <- tidyr::separate(plot_data,col = "GeneRatio",into = c("Gene","Ratio"),sep = "\\/")
+plot_data$Gene%<>%as.numeric()
+plot_data$Ratio%<>%as.numeric()
+plot_data$GeneRatio <- round(plot_data$Gene/plot_data$Ratio,2)
+setorder(plot_data,pvalue)
+#
+plot_data$Description <- factor(plot_data$Description,levels = plot_data$Description%>%unique()%>%rev())
+#
+plot_data$Type <- factor(plot_data$Type,levels = c("KEGG","GO(BP)"))
+#
+```
+###3.5.2. 
+```{r,fig.height=6,fig.width=9}
+ggplot(plot_data,aes(x=Strain,y=Description))+geom_point(aes(size=GeneRatio,color=-log10(qvalue)))+
+  theme_classic2()+scale_radius(range = c(4,10))+
+  ylab("")+xlab("")+
+  theme(axis.text.x = element_text(angle = 45,hjust = .9,vjust = .9,size=18),axis.text.y = element_text(size=15),strip.text.y = element_text(size = 18))+
+  scale_color_gradientn(colors = c("#2166AC","#D1E5F0","#F4A582","#F4A582","#D6604D","#D6604D","#B2182B"),name="-log10(qvalue)",
+                        values = scales::rescale(c(quantile(-log10(plot_data$qvalue))[1], quantile(-log10(plot_data$qvalue))[4], max(-log10(plot_data$qvalue)))))+
+  facet_grid(Type~.,scales = "free",space = "free")
+```
+
+
+

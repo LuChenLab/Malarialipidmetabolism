@@ -1,0 +1,310 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1 loading package and data
+##1.1 package
+```{r}
+library(Seurat)
+library(magrittr)
+library(data.table)
+library(ggplot2)
+library(RColorBrewer)
+library(ggpubr)
+library(DESeq2)
+library(limma)
+library(tidyr)
+library(dplyr)
+library(plyr)
+library(clusterProfiler)
+library(org.Pf.plasmo.db)
+```
+##1.2. 
+```{r}
+pb_sce.big <- readRDS("../Analysis/01_pb_IDE_sc.Rds")
+pf_sce.big <-  readRDS("../Analysis/01_pf_IDE_sc.Rds")
+```
+##1.3. 
+```{r}
+ID_transform <- readRDS("../Data/01_03_Gene_Orth_Data.Rds")%>%as.data.table()
+setkey(ID_transform,berghei)
+```
+
+#2. UMAP
+##2.1.
+```{r,fig.height=5,fig.width=5.5}
+p1 <- DimPlot(pf_sce.big,group.by= "Scmap",label=F,pt.size=3,reduction = "umap",raster = T)+ggtitle("P. falciparum")+
+  theme(plot.title = element_text(size=24,face="italic"))+
+  scale_color_manual(values = c("#82CBEB", "#3182bd", "#A4EF8D", "#4ACC41", "#20922C", "#F5947B","#de2d26","#9F1325"))+
+  NoLegend()+
+  scale_x_reverse()+scale_y_reverse()
+```
+##2.2.
+```{r,fig.height=5,fig.width=6.5}
+p2 <- DimPlot(pb_sce.big,group.by= "Cluster",label=F,pt.size=3,reduction = "umap",raster = T)+ggtitle("P. berghei")+
+  theme(plot.title = element_text(size=24,face="italic"))+
+  scale_color_manual(values = c("#82CBEB", "#3182bd", "#A4EF8D", "#4ACC41", "#20922C", "#F5947B","#de2d26","#9F1325"))+
+  theme(legend.text = element_text(size=18))+guides(color=guide_legend(override.aes = list(size=8)))
+```
+##2.3. conclusion
+```{r,fig.width=15,fig.height=6}
+p1+p2
+```
+
+#3. cell numbers
+##3.1. 
+```{r}
+#
+Data <- data.table(
+  Name = c(table(pf_sce.big$Scmap)%>%names(),table(pb_sce.big$Cluster)%>%names()),
+  Cellnumber = c(table(pf_sce.big$Scmap)%>%as.numeric(),table(pb_sce.big$Cluster)%>%as.numeric()),
+  Species = rep(c("P. falciparum","P. berghei"),c(8,8))
+  
+)
+#
+Data$Name <- factor(Data$Name,levels = levels(pf_sce.big$Scmap)%>%rev())
+Data$Species <- factor(Data$Species,levels = c("P. falciparum","P. berghei"))
+```
+##3.2. 
+```{r,fig.width=5,fig.height=4}
+ggplot(Data, aes(x = Cellnumber, y = Name)) + geom_bar(aes(fill = Name), stat = "identity") +
+  scale_fill_manual(
+    values = c(
+      "#deebf7",
+      "#3182bd",
+      "#e5f5e0",
+      "#a1d99b",
+      "#31a354",
+      "#fee0d2",
+      "#fc9272",
+      "#de2d26"
+    ) %>% rev()
+  ) +
+  theme_classic2() +
+  NoLegend() + geom_text(aes(label = Cellnumber), hjust = .8) +
+  facet_grid(. ~ Species, scales = "free")
+```
+
+#4. dynamic of nfeature
+##4.1. 
+```{r}
+#
+plot_data1 <- pb_sce.big@meta.data%>%as.data.table()
+plot_data1$Strain <- rep("P. berghei",nrow(plot_data1))
+plot_data1 <- plot_data1[,c("nFeature_RNA","Strain","Cluster")]
+#
+plot_data2 <- pf_sce.big@meta.data%>%as.data.table()
+plot_data2$Strain <- rep("P. falciparum",nrow(plot_data2))
+plot_data2 <- plot_data2[,c("nFeature_RNA","Strain","Scmap")]
+colnames(plot_data2)[3] <- "Cluster"
+#
+Plot_data <- rbind(plot_data1,plot_data2)
+rm(plot_data1,plot_data2)
+
+Plot_data$Cluster <- factor(Plot_data$Cluster,levels = pb_sce.big$Cluster%>%levels()%>%rev())
+Plot_data$Strain  <- factor(Plot_data$Strain,levels = c("P. falciparum","P. berghei"))
+Plot_data <- melt(Plot_data)
+```
+##4.2.  
+```{r,fig.width=7,fig.height=5}
+Plot_data <- Plot_data[,.(Gene_mean=mean(value)),by=.(Strain,Cluster)]
+levels(Plot_data$Cluster)%<>%rev()
+setorder(Plot_data,Cluster)
+Plot_data$Order <- rep(c(1:8),each=2)
+#
+ggplot(Plot_data,aes(x=Order,y=Gene_mean))+geom_point(aes(shape=Strain,color=Strain),size=6)+theme_classic2()+
+  scale_shape_manual(values = c(15,19))+
+  scale_x_continuous(breaks = c(1:8),labels = Plot_data$Cluster%>%unique()%>%as.character())+
+  theme(axis.text.x = element_text(angle = 45,hjust = .9,vjust = .9,size=18),
+        axis.title.y = element_text(size = 20),axis.text.y = element_text(size=15),
+        legend.text = element_text(size = 14),legend.title = element_text(size = 16)
+        )+geom_smooth(se=F,size=2)+xlab("")+ylab("nFeature RNA")+theme(plot.title=element_text(size=25,hjust=.5))+
+  ggtitle("Number of Genes")+scale_color_manual(values =  c("#8BB399", "#E1BB74"))
+```
+
+#5. 跨物种PCA
+##5.1. 
+```{r}
+#
+pf_matrix <- AggregateExpression(pf_sce.big,group.by = "Scmap",assays = "RNA",slot = "counts")
+pf_matrix <- pf_matrix$RNA
+colnames(pf_matrix) <- paste0("Pf_",colnames(pf_matrix))
+rownames(pf_matrix) <- gsub("-","_",rownames(pf_matrix))
+
+#
+pb_matrix <- AggregateExpression(pb_sce.big,group.by = "Cluster",slot = "counts")
+pb_matrix <- pb_matrix$RNA
+colnames(pb_matrix) <- paste0("Pb_",colnames(pb_matrix))
+rownames(pb_matrix) <- gsub("-","_",rownames(pb_matrix))
+```
+##5.2. 
+```{r}
+#
+pf_gene <- intersect(ID_transform[rownames(pb_matrix)]$falciparum,rownames(pf_matrix))
+setkey(ID_transform,falciparum)
+pb_gene <- ID_transform[pf_gene]$berghei
+
+#
+pf_matrix <- pf_matrix[pf_gene,]
+pb_matrix <- pb_matrix[pb_gene,]
+rownames(pb_matrix) <- pf_gene
+
+#
+data <- cbind(pf_matrix,pb_matrix)
+```
+##5.3. 
+```{r}
+meta <- data.frame(row.names = colnames(data),
+                   Strain=rep(c("Pf","Pb"),each=8),
+                   Stage= rep(levels(pb_sce.big$Cluster),2)
+                     )
+meta$Strain%<>%as.factor()
+meta$Stage%<>%as.factor()
+
+dds <- DESeqDataSetFromMatrix(countData = data,
+                              colData   = meta,
+                              design= ~ Strain+Stage)
+dds_res <- DESeq(dds)
+saveRDS(dds_res,"../Analysis/01_04_dds_res.Rds")
+```
+##5.4. 
+```{r,fig.width=6,fig.height=4}
+rld <- rlog(dds_res, blind = FALSE)
+model <- model.matrix(~Stage,data = colData(rld))
+rld1 <- rld
+assay(rld1)<-removeBatchEffect(assay(rld1), batch = colData(rld1)$Strain,design = model)
+#
+pcaData <- plotPCA(rld1, intgroup = c("Stage","Strain"), returnData = TRUE,ntop = Inf)
+pcaData%<>%mutate(
+  Strain=case_when(
+  Strain=="Pf"~"P. falciparum",  
+  Strain=="Pb"~"P. berghei"  
+  )
+)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+#
+pcaData$Strain <- factor(pcaData$Strain, levels = c("P. falciparum","P. berghei"))
+pcaData$Stage  <- factor(pcaData$Stage , levels = levels(pb_sce.big$Cluster))
+#
+ggplot(pcaData, aes(x = PC1, y = PC2,shape=Strain, color=Stage)) +
+  geom_point(size =5) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  theme_classic2()+scale_color_brewer(palette = "Set1")+
+  scale_shape_manual(values = c(15,19))+
+  scale_color_manual(values = c("#82CBEB", "#3182bd", "#A4EF8D", "#4ACC41", "#20922C", "#F5947B","#de2d26","#9F1325"))+
+  theme(axis.title = element_text(size=14),axis.text = element_text(size=13),
+        legend.text = element_text(size = 14),legend.title = element_text(size = 16))
+```
+
+#6. Gene ontology
+##6.1. 
+```{r}
+#
+Idents(pf_sce.big) <- "Scmap"
+DE_pf <- FindAllMarkers(pf_sce.big,only.pos = T)
+DE_pf <- subset(DE_pf, DE_pf$p_val_adj < 0.05) # & avg_log2FC > 0.25
+DE_pf%<>%as.data.table()
+setkey(DE_pf,cluster)
+DE_pf$gene <- gsub("-","_",DE_pf$gene)
+saveRDS(DE_pf,"../Analysis/01_04_DE_pf.Rds")
+#
+Idents(pb_sce.big) <- "Cluster"
+DE_pb <- FindAllMarkers(pb_sce.big,only.pos = T)
+DE_pb <- subset(DE_pb, DE_pb$p_val_adj < 0.05)
+DE_pb%<>%as.data.table()
+setkey(DE_pb,cluster)
+DE_pb$gene <- gsub("-","_",DE_pb$gene)
+saveRDS(DE_pb,"../Analysis/01_04_DE_pb.Rds")
+```
+##6.2.
+```{r}
+setkey(ID_transform,berghei)
+Genelist <- list(
+  #
+  Pf_ER  = DE_pf[cluster=="Early_ring"]$gene%>%unique(),
+  Pb_ER  = subset(ID_transform[DE_pb[cluster=="Early_ring"]$gene]$falciparum,!is.na(ID_transform[DE_pb[cluster=="Early_ring"]$gene]$falciparum))%>%unique(),
+  #
+  Pf_LR  = DE_pf[cluster=="Late_ring"]$gene%>%unique(),
+  Pb_LR  = subset(ID_transform[DE_pb[cluster=="Late_ring"]$gene]$falciparum,!is.na(ID_transform[DE_pb[cluster=="Late_ring"]$gene]$falciparum))%>%unique(),
+  #
+  Pf_ET  = DE_pf[cluster=="Early_troph"]$gene%>%unique(),
+  Pb_ET  = subset(ID_transform[DE_pb[cluster=="Early_troph"]$gene]$falciparum,!is.na(ID_transform[DE_pb[cluster=="Early_troph"]$gene]$falciparum))%>%unique(),
+  #
+  Pf_MT  = DE_pf[cluster=="Mid_troph"]$gene%>%unique(),
+  Pb_MT  = subset(ID_transform[DE_pb[cluster=="Mid_troph"]$gene]$falciparum,!is.na(ID_transform[DE_pb[cluster=="Mid_troph"]$gene]$falciparum))%>%unique(),
+  #
+  Pf_LT  = DE_pf[cluster=="Late_troph"]$gene%>%unique(),
+  Pb_LT  = subset(ID_transform[DE_pb[cluster=="Late_troph"]$gene]$falciparum,!is.na(ID_transform[DE_pb[cluster=="Late_troph"]$gene]$falciparum))%>%unique(),
+  #
+  Pf_ES  = DE_pf[cluster=="Early_schi"]$gene%>%unique(),
+  Pb_ES  = subset(ID_transform[DE_pb[cluster=="Early_schi"]$gene]$falciparum,!is.na(ID_transform[DE_pb[cluster=="Early_schi"]$gene]$falciparum))%>%unique(),
+  #
+  Pf_MS  = DE_pf[cluster=="Mid_schi"]$gene%>%unique(),
+  Pb_MS  = subset(ID_transform[DE_pb[cluster=="Mid_schi"]$gene]$falciparum,!is.na(ID_transform[DE_pb[cluster=="Mid_schi"]$gene]$falciparum))%>%unique(),
+  #
+  Pf_LS  = DE_pf[cluster=="Late_schi"]$gene%>%unique(),
+  Pb_LS  = subset(ID_transform[DE_pb[cluster=="Late_schi"]$gene]$falciparum,!is.na(ID_transform[DE_pb[cluster=="Late_schi"]$gene]$falciparum))%>%unique()
+)
+```
+##6.3. GO
+###6.3.1. 
+```{r,fig.width=7,fig.height=12}
+Go_bp <- compareCluster(Genelist,fun="enrichGO", OrgDb='org.Pf.plasmo.db',keyType = "SYMBOL",ont= "BP")
+Go_bp_simple <- clusterProfiler::simplify(Go_bp)
+Plot <- enrichplot::dotplot(Go_bp_simple,showCategory=3,font.size=8, includeAll=T)+
+  theme(axis.text.y = element_text(size = 10),axis.text.x = element_text(angle = 45,hjust = .9,vjust = .9))
+```
+###6.3.2. 
+```{r,fig.width=9,fig.height=7}
+PlotData1 <- Plot$data
+PlotData1$Cluster <- gsub("\\\n.*","",PlotData1$Cluster)
+PlotData1%<>%separate(col = "Cluster",into=c("Species","Time"))
+PlotData1%<>%as.data.table()
+PlotData1$Species <- factor(PlotData1$Species,levels = c("Pf","Pb"))
+PlotData1$Time <- factor(PlotData1$Time,levels = c("ER","LR","ET","MT","LT","ES","MS","LS"))
+```
+##6.4. KEGG
+###6.4.1. 
+```{r,fig.width=10,fig.height=6}
+KEGG <- compareCluster(Genelist,fun = "enrichKEGG",organism="pfa")
+KEGG@compareClusterResult$Description <- gsub(" - Plasmodium.*$","",KEGG@compareClusterResult$Description)
+Plot <- enrichplot::dotplot(KEGG,showCategory=3,font.size=8, includeAll=T)
+```
+###6.4.2. 
+```{r,fig.width=8,fig.height=5}
+PlotData2 <- Plot$data
+PlotData2$Cluster <- gsub("\\\n.*","",PlotData2$Cluster)
+PlotData2%<>%separate(col = "Cluster",into=c("Species","Time"))
+PlotData2%<>%as.data.table()
+PlotData2$Species <- factor(PlotData2$Species,levels = c("Pf","Pb"))
+PlotData2$Time <- factor(PlotData2$Time,levels = c("ER","LR","ET","MT","LT","ES","MS","LS"))
+```
+##6.5. 
+```{r,fig.width=9.5,fig.height=10}
+PlotData2$Type <- "KEGG"
+PlotData1$Type <- "GO (BP)"
+PlotData <- rbind(PlotData1,PlotData2)
+PlotData$Type <- factor(PlotData$Type,levels = c("KEGG","GO (BP)"))
+#
+ggplot(PlotData)+geom_point(aes(x=Species,y=Description,size=GeneRatio,color=-log10(p.adjust)))+theme_classic2()+
+  ggh4x::facet_nested(Type~Time,scales = "free",space = "free")+
+  scale_color_gradientn(colors = c("#2166AC","#D1E5F0","#F4A582","#F4A582","#D6604D","#D6604D","#B2182B"),name="-log10(p.adjust)",
+                        values = scales::rescale(c(quantile(-log10(PlotData$p.adjust))[2], quantile(-log10(PlotData$p.adjust))[4], max(-log10(PlotData$p.adjust)))))+
+  xlab("")+ylab("")
+```
+
+#7. 
+```{r}
+sessionInfo()
+```
+
+
+
+
+

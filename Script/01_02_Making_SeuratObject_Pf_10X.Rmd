@@ -1,0 +1,87 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1. loading package and data 
+##1.1. package
+```{r}
+library(Seurat)
+library(Matrix)
+library(magrittr)
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(harmony)
+```
+##1.2. 
+```{r}
+load_and_merge_split_matrix <- function(path, prefix) {
+  files <- list.files(path, pattern = paste0("^", prefix, "_\\d+\\.csv$"), full.names = TRUE)
+  
+  if (length(files) == 0) {
+    stop("No matching files found. Please check the provided path and prefix.")
+  }
+
+  files <- files[order(as.numeric(gsub("^.*_(\\d+)\\.csv$", "\\1", files)))]
+
+  mat_list <- lapply(files, function(f) {
+    read.csv(f, row.names = 1, check.names = FALSE)
+  })
+  
+  merged <- do.call(cbind, mat_list)
+  message(sprintf("Successfully loaded and merged %d files: %d rows × %d columns.", 
+                  length(files), nrow(merged), ncol(merged)))
+  return(as.matrix(merged))
+}
+
+Matirx <- load_and_merge_split_matrix(path="../Data/01_01_Pf_10X",prefix="pf-ch10x-raw")%>%as('dgCMatrix')
+Matirx_nor <- load_and_merge_split_matrix(path="../Data/01_01_Pf_10X",prefix="pf-ch10x-exp")%>%as('dgCMatrix')
+#
+stopifnot(rownames(Matirx)==rownames(Matirx_nor))
+stopifnot(colnames(Matirx)==colnames(Matirx_nor))
+```
+##1.3. 
+```{r}
+Metainfo <- read.csv("../Data/01_01_Pf_10X/pf-ch10x-data.csv",row.names = 1)
+```
+##1.4. 
+```{r}
+stopifnot(rownames(Metainfo)==colnames(Matirx))
+stopifnot(rownames(Metainfo)==colnames(Matirx))
+sce.big <- Seurat::CreateSeuratObject(counts = Matirx,meta.data=Metainfo,project="MCA")
+sce.big <- subset(sce.big,STAGE_LR!="gametocyte")
+sce.big@assays$RNA@data <- Matirx_nor[,colnames(sce.big)]
+```
+
+#2.
+##2.1. 
+```{r}
+sce.big %<>% FindVariableFeatures()%>%ScaleData()
+sce.big <- RunPCA(sce.big, npcs = 50)
+sce.big %<>% RunHarmony("orig.ident", plot_convergence = TRUE)
+sce.big <- RunUMAP(sce.big,reduction = "harmony", dims = 1:20,n.components = 2L) 
+sce.big@reductions$umap@cell.embeddings[,1] <- sce.big$UMAP_2
+sce.big@reductions$umap@cell.embeddings[,2] <- sce.big$UMAP_3
+#
+sce.big <- FindNeighbors(sce.big,reduction = "harmony", dims = 1:20)
+sce.big <- FindClusters(sce.big,resolution = .5)
+```
+##2.2.
+```{r,fig.width=5.5,fig.height=4.5}
+sce.big@meta.data <- sce.big@meta.data[,c("orig.ident","nCount_RNA","nFeature_RNA", "STRAIN","DAY","HOST","STAGE_LR")]
+UMAPPlot(sce.big,group.by="STAGE_LR")+scale_color_brewer(palette = "Set1")+scale_x_reverse()+scale_y_reverse()
+```
+##2.3. 
+```{r}
+saveRDS(sce.big,"../Analysis/01_pf_IDE_sc.Rds")
+```
+##2.4.
+```{r}
+sessionInfo()
+```
+

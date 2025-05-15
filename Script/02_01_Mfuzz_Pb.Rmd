@@ -1,0 +1,148 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1 loading package and data
+##1.1 
+```{r}
+library(Seurat)
+library(Mfuzz)
+library(magrittr)
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+```
+##1.2 
+```{r}
+sce.big <- readRDS("../Analysis/01_pb_IDE_sc.Rds")
+```
+
+#2. Mfuzz
+##2.1 
+```{r}
+PB_cycle <- AverageExpression(sce.big,group.by = "Cluster")
+PB_cycle <- PB_cycle$RNA
+PB_cycle <- PB_cycle[which(rowSums(PB_cycle)>0),]
+```
+##2.2 
+###2.2.1. 
+```{r}
+df <- new("ExpressionSet", exprs = PB_cycle)
+df <- standardise(df)
+m <- mestimate(df)
+set.seed(123)
+cl <- mfuzz(df, c = 8, m = m)
+#
+saveRDS(cl,"../Analysis/02_01_pb_mfuzz_cl.Rds")
+saveRDS(df,"../Analysis/02_01_pb_mfuzz_df.Rds")
+```
+###2.2.2. 
+```{r,fig.width=18,fig.height=8}
+set.seed(123)
+mfuzz.plot(df,cl,mfrow = c(2, 4),new.window = F)
+```
+##2.3.
+```{r}
+Make_mfuzz_data <- function(cl,df){
+  #
+  cluster_DT <- data.table(Cluster=cl$cluster%>%as.character(),Gene_name=cl$cluster%>%names%>%as.character())
+  setkey(cluster_DT,Gene_name)
+  plot_data <- df@assayData$exprs%>%as.data.frame()
+  plot_data$Gene_name <- rownames(plot_data)
+  plot_data%<>%as.data.table()
+  plot_data <- melt(plot_data,id.vars=c("Gene_name"))
+  setnames(plot_data,old = c("variable","value"),new = c("Time","Expression"))
+  plot_data$Cluster <- cluster_DT[plot_data$Gene_name]$Cluster
+  
+  #
+  membership_DT <- cl$membership%>%as.data.frame()
+  cluster <- cl$cluster%>%as.numeric()
+  extract_mem <- function(x,y){
+    z <- membership_DT[x,y]%>%as.numeric()
+    return(z)
+  }
+  membership <-  mapply(extract_mem,c(1:length(cluster)),cluster)
+  membership_DT <- data.table(Gene_name=rownames(membership_DT),Membership=membership)
+  setkey(membership_DT,Gene_name)
+    
+  plot_data$Membership <- membership_DT[plot_data$Gene_name]$Membership
+  plot_data%<>%as.data.table()
+  return(plot_data)
+}
+```
+##2.4.
+```{r}
+plot_data <- Make_mfuzz_data(cl=cl,df=df)
+setorder(plot_data,Gene_name)
+plot_data$color <- rep("grey",nrow(plot_data))
+plot_data[Membership > 0.95]$color <- "red"
+plot_data$Cluster <- factor(plot_data$Cluster,levels = c("1","2","3","4","5","6","7","8"))
+```
+##2.5.
+```{r}
+#
+cluster_last_count <- plot_data %>%
+  group_by(Cluster) %>%
+  summarize(last_count = tail(table(color), 1)/8)
+#
+plot_data %<>% 
+  mutate(Cluster_new = case_when(
+    Cluster == "1" ~ paste("Cluster6 (", cluster_last_count$last_count[cluster_last_count$Cluster == "1"], ")", sep = ""),
+    Cluster == "2" ~ paste("Cluster7 (", cluster_last_count$last_count[cluster_last_count$Cluster == "2"], ")", sep = ""),
+    Cluster == "3" ~ paste("Cluster1 (", cluster_last_count$last_count[cluster_last_count$Cluster == "3"], ")", sep = ""),
+    Cluster == "4" ~ paste("Cluster2 (", cluster_last_count$last_count[cluster_last_count$Cluster == "4"], ")", sep = ""),
+    Cluster == "5" ~ paste("Cluster4 (", cluster_last_count$last_count[cluster_last_count$Cluster == "5"], ")", sep = ""),
+    Cluster == "6" ~ paste("Cluster5 (", cluster_last_count$last_count[cluster_last_count$Cluster == "6"], ")", sep = ""),
+    Cluster == "7" ~ paste("Cluster3 (", cluster_last_count$last_count[cluster_last_count$Cluster == "7"], ")", sep = ""),
+    Cluster == "8" ~ paste("Cluster8 (", cluster_last_count$last_count[cluster_last_count$Cluster == "8"], ")", sep = "")
+  ))
+
+#
+plot_data$Cluster_new <- factor(plot_data$Cluster_new, levels = c(
+  "Cluster1 (279)", "Cluster2 (224)", "Cluster3 (341)", "Cluster4 (309)",
+  "Cluster5 (270)", "Cluster6 (147)", "Cluster7 (128)", "Cluster8 (207)"
+))
+#
+saveRDS(plot_data,"../Analysis/02_01_pb_mfuzz_plotdata.Rds")
+```
+##2.6. 
+```{r,fig.width=18,fig.height=8}
+ggplot(plot_data,aes(x=Time,y=Expression))+geom_line(aes(group=Gene_name,color=color),size=.1)+
+  theme_classic2()+theme(legend.position = "none")+xlab("")+
+  scale_x_discrete(expand = c(0.1,0))+scale_color_manual(values = c("grey","#F08080"))+
+  facet_wrap(.~Cluster_new ,ncol = 4,labeller = )+  
+  theme(axis.text.x = element_text(angle = 45,vjust = .9,hjust = .9))+
+  theme(axis.text.x = element_text(size=20))+
+  theme(strip.text = element_text(size=25))+
+  theme(axis.text.y = element_text(size=15),axis.title.y = element_text(size=25))
+```
+
+#3. candidate genes
+##3.1. 
+```{r}
+gene <- c( 
+          plot_data[Cluster==5 & Membership > 0.95 ]$Gene_name%>%unique(),
+          plot_data[Cluster==6 & Membership > 0.95 ]$Gene_name%>%unique()
+          )
+gene_ori <- gsub("-","_",gene)
+Mfuzz_gene <- data.table(Pb_gene=gene_ori)
+```
+##3.2.
+```{r}
+ID_transform <- readRDS("../Data/01_03_Gene_Orth_Data.Rds")%>%as.data.table()
+setkey(ID_transform,berghei)
+
+transID <- function(x){
+  y <- ID_transform[x]$falciparum
+  return(y)
+}
+Mfuzz_gene$Pf_gene <- transID(Mfuzz_gene$Pb_gene)
+saveRDS(Mfuzz_gene,"../Analysis/02_01_pb_mfuzz_gene.Rds")
+```
+
