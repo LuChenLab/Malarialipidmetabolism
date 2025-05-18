@@ -76,7 +76,8 @@ This folder contains `.Rds` files with processed results from each major analysi
 
 ## 🤖 2. MRS: Metabolism-Related Score Model
 
-MRS is a machine learning package built on [`caret`](https://github.com/topepo/caret), designed for binary classification problems where only **positive samples** are available.
+MRS is a machine learning package built on [`caret`](https://github.com/topepo/caret), tailored for positive-only binary classification tasks.  
+All source files and detailed function documentation are available in the `/MRS_package` folder.
 
 It implements a **Spy-PU learning** pipeline to identify reliable negatives, compares 10 classifiers, supports ablation-based feature selection, and provides end-to-end model evaluation.
 
