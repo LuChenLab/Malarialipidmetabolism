@@ -26,13 +26,16 @@ We jointly analyzed scRNA-seq data from *Plasmodium falciparum* and *Plasmodium 
 
 ### 📁 Dataset Overview
 
-This folder contains the core input data used in this project, including both gene expression matrices and corresponding phenotype annotations.
+This folder contains core datasets used throughout the analysis, including single-cell and bulk RNA-seq data, gene annotation, and machine learning input features.
 
-| File / Folder       | Description |
-|---------------------|-------------|
-| `01_01_Pb_10X/`     | Single-cell RNA-seq dataset of *Plasmodium berghei*, including the raw gene expression matrix and cell-level phenotype annotations. Data sourced from the [Malaria Cell Atlas](https://www.malariacellatlas.org). |
-| `01_01_Pf_10X/`     | Single-cell RNA-seq dataset of *Plasmodium falciparum*, including the raw gene expression matrix and cell-level phenotype annotations. Data sourced from the [Malaria Cell Atlas](https://www.malariacellatlas.org). |
-| `04_raw_counts.txt` | Bulk RNA-seq raw count matrix from the CAP knockout experiment (no phenotype file provided). |
+| File / Folder              | Description |
+|----------------------------|-------------|
+| `01_01_Pb_10X/`            | Single-cell RNA-seq dataset of *Plasmodium berghei*, including raw gene expression matrix and cell-level phenotype annotations. Data sourced from the [Malaria Cell Atlas](https://www.malariacellatlas.org). |
+| `01_01_Pf_10X/`            | Single-cell RNA-seq dataset of *Plasmodium falciparum*, including raw gene expression matrix and cell-level phenotype annotations. Data sourced from the [Malaria Cell Atlas](https://www.malariacellatlas.org). |
+| `01_03_Gene_Orth_Data.Rds` | One-to-one ortholog mapping between *P. berghei* and *P. falciparum*, enabling cross-species gene name translation. |
+| `03_Gene.xlsx`             | Curated list of lipid metabolism-related genes for pathway analysis and candidate selection. |
+| `03_GeneInfo_forML.Rds`    | Feature matrix with gene-level annotations and binary labels used as input for the MRS model. |
+| `04_raw_counts.txt`        | Bulk RNA-seq raw count matrix from the CAP knockout experiment (phenotype data not available). |
 
 
 ## 📜 Key Scripts
