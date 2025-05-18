@@ -57,6 +57,21 @@ The analysis scripts are organized by module prefix:
 | `03_02_ML_for_candidate_gene.Rmd` | Machine learning-based gene scoring and selection using the MRS package. |
 | `04_DESeq2.Rmd` | Differential expression analysis for CAP knockout using DESeq2. |
 
+
+## 📊 Analysis Outputs
+
+This folder contains `.Rds` files with processed results from each major analysis step. Files with `pb` and `pf` denote *P. berghei* and *P. falciparum*, respectively.
+
+| File(s) | Description |
+|---------|-------------|
+| `01_04_DE_pb.Rds`, `01_04_DE_pf.Rds` | Stage-specific marker genes identified from single-cell data for each species. |
+| `01_04_dds_res.Rds` | DESeq2 pseudobulk result object combining both species. |
+| `02_01_pb_mfuzz_cl.Rds`, `02_02_pf_mfuzz_cl.Rds` | Mfuzz clustering results (cluster labels). |
+| `02_01_pb_mfuzz_df.Rds`, `02_02_pf_mfuzz_df.Rds` | Preprocessed expression matrices used in Mfuzz analysis. |
+| `02_01_pb_mfuzz_gene.Rds`, `02_01_pf_mfuzz_gene.Rds` | Final selected conserved stage-enriched genes. |
+| `02_01_pb_mfuzz_plotdata.Rds`, `02_01_pf_mfuzz_plotdata.Rds` | Processed data for Mfuzz cluster visualization. |
+| `03_02_PosNegData.Rds` | Dataset for the MRS-based gene prioritization model. |
+
 ---
 
 ## 🤖 2. MRS: Metabolism-Related Score Model
