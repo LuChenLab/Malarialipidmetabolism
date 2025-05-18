@@ -103,33 +103,33 @@ The MRS package was developed under R version 4.0.2, and depends on core package
 # Install from source
 devtools::install_local("MRS_1.0.0.tar.gz")
 
-# Step 1: Prepare data
-prep <- Prepare_classification_data(my_data)
+# Step 1: Find optimal PU-learning parameters using spy strategy
+pu_param <- Tune_spy_pu(data = my_data)
 
-# Step 2 (optional): PU-learning
-pu_data <- Identify_reliable_negatives(prep$trainData, spy_ratio = 0.3, threshold_quantile = 0.05)
+# Step 2: Identify reliable negatives using selected PU-learning parameters
+pu_data <- Identify_reliable_negatives(data = my_data)
 
-# Step 3: Train and compare models
+# Step 3: Prepare training and testing datasets
+prep <- Prepare_classification_data(pu_data)
+
+# Step 4: Train and compare multiple models, evaluate performance
 models <- Train_multiple_models(prepared_data = prep)
 
-# Step 4: Evaluate training performance
+# Evaluate training performance across models
 train_eval <- Evaluate_train_performance(models, prepared_data = prep)
 
-# Step 5: Evaluate test performance
+# Evaluate test performance across models
 test_eval <- Evaluate_test_performance(models, prepared_data = prep)
 
-# Step 6 (optional): Feature selection
-fs_result <- Feature_selection_ablation(prepared_data = prep, model_name = "XGBoost")
+# Step 5 (Optional): Perform feature ablation to identify key predictors
+fs_result <- Feature_selection_ablation(prepared_data = prep, model_name = "XX")
 
-# Step 7: Final tuning
-final_model <- Tune_model_eval("XGBoost", prepared_data = fs_result)
+# Step 6: Tune hyperparameters and finalize best model
+final_model <- Tune_model_eval(prepared_data = fs_result, model_name = "XX")
 
-# Step 8: Plotting
-# PR Curve
-Plot_pr_curves(final_model$train_pr_list, final_model$test_pr, title = "Precision-Recall Curves")
-
-# ROC Curve
+# Plot AUROC and AUPRC curves
 Plot_roc_curves(final_model$train_roc_list, final_model$test_roc, title = "ROC Curves")
+Plot_pr_curves(final_model$train_pr_list, final_model$test_pr, title = "Precision-Recall Curves")
 ```
 
 ---
