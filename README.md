@@ -1,6 +1,6 @@
 # Malaria Lipid Metabolism Analysis & MRS R Package
 
-> **Note**: All analyses and the development of the MRS package were conducted using **R version 4.0.2**, ensuring compatibility and reproducibility within this environment.
+> **Note**: All analyses and the development of the MRS package were conducted using **R version 4.0.2**, ensuring compatibility and reproducibility within this environment. The full list of R packages and their versions used during the analysis is provided in Session_info.txt.
 
 This repository includes:
 
