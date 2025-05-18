@@ -26,13 +26,14 @@ We jointly analyzed scRNA-seq data from *Plasmodium falciparum* and *Plasmodium 
 
 ### 📁 Dataset Overview
 
-| File | Description |
-|------|-------------|
-| `01_01_Pb_seurat.Rds`, `01_02_Pf_seurat.Rds` | Seurat objects from [Malaria Cell Atlas](https://www.malariacellatlas.org) |
-| `02_Gene_Orth_Data.xlsx` | One-to-one orthologs across *Plasmodium* species |
-| `03_LipidGene.xlsx` | Annotated lipid metabolism-related genes |
-| `04_RF_GeneInfo.xlsx` | Features for RF model |
-| `05_raw_counts.txt` | Bulk RNA-seq raw counts for CAP knockout |
+This folder contains the core input data used in this project, including both gene expression matrices and corresponding phenotype annotations.
+
+| File / Folder       | Description |
+|---------------------|-------------|
+| `01_01_Pb_10X/`     | 10X Genomics single-cell RNA-seq dataset of *Plasmodium berghei*, including the raw gene expression matrix and cell-level phenotype annotations. Data sourced from the [Malaria Cell Atlas](https://www.malariacellatlas.org). |
+| `01_01_Pf_10X/`     | 10X Genomics single-cell RNA-seq dataset of *Plasmodium falciparum*, including the raw gene expression matrix and cell-level phenotype annotations. Data sourced from the [Malaria Cell Atlas](https://www.malariacellatlas.org). |
+| `04_raw_counts.txt` | Bulk RNA-seq raw count matrix from the CAP knockout experiment (no phenotype file provided). |
+
 
 ### 📜 Key Scripts
 
