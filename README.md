@@ -30,8 +30,8 @@ This folder contains the core input data used in this project, including both ge
 
 | File / Folder       | Description |
 |---------------------|-------------|
-| `01_01_Pb_10X/`     | 10X Genomics single-cell RNA-seq dataset of *Plasmodium berghei*, including the raw gene expression matrix and cell-level phenotype annotations. Data sourced from the [Malaria Cell Atlas](https://www.malariacellatlas.org). |
-| `01_01_Pf_10X/`     | 10X Genomics single-cell RNA-seq dataset of *Plasmodium falciparum*, including the raw gene expression matrix and cell-level phenotype annotations. Data sourced from the [Malaria Cell Atlas](https://www.malariacellatlas.org). |
+| `01_01_Pb_10X/`     | Single-cell RNA-seq dataset of *Plasmodium berghei*, including the raw gene expression matrix and cell-level phenotype annotations. Data sourced from the [Malaria Cell Atlas](https://www.malariacellatlas.org). |
+| `01_01_Pf_10X/`     | Single-cell RNA-seq dataset of *Plasmodium falciparum*, including the raw gene expression matrix and cell-level phenotype annotations. Data sourced from the [Malaria Cell Atlas](https://www.malariacellatlas.org). |
 | `04_raw_counts.txt` | Bulk RNA-seq raw count matrix from the CAP knockout experiment (no phenotype file provided). |
 
 
