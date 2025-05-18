@@ -48,7 +48,7 @@ The analysis scripts are organized by module prefix:
 |--------|-------------|
 | `01_01_Making_SeuratObject_Pb_10X.Rmd` | Constructs Seurat object from *P. berghei* 10X data. |
 | `01_02_Making_SeuratObject_Pf_10X.Rmd` | Constructs Seurat object from *P. falciparum* 10X data. |
-| `01_03_Scmap.Rmd` | Performs cell type and stage assignment using [scmap](https://www.nature.com/articles/nmeth.4644). |
+| `01_03_Scmap.Rmd` | Performs cell type and stage assignment using [Scmap](https://www.nature.com/articles/nmeth.4644). |
 | `01_04_scRNAseq_conclusion.Rmd` | Summary of single-cell RNA-seq results and temporal feature characteristics. |
 | `02_01_Mfuzz_Pb.Rmd` | Temporal expression clustering for *P. berghei* using Mfuzz. |
 | `02_02_Mfuzz_Pf.Rmd` | Temporal expression clustering for *P. falciparum* using Mfuzz. |
