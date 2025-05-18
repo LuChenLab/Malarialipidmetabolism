@@ -35,15 +35,27 @@ This folder contains the core input data used in this project, including both ge
 | `04_raw_counts.txt` | Bulk RNA-seq raw count matrix from the CAP knockout experiment (no phenotype file provided). |
 
 
-### 📜 Key Scripts
+## 📜 Key Scripts
+
+The analysis scripts are organized by module prefix:
+
+- `01_` scripts: Single-cell preprocessing, Seurat object construction, scmap-based annotation, and transcriptomic feature analysis.
+- `02_` scripts: Gene temporal expression analysis using [Mfuzz](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2139991/), aimed at identifying conserved trophozoite-stage upregulated genes.
+- `03_` scripts: Target gene prioritization using the MRS package.
+- `04_` scripts: Differential expression (DE) analysis of CAP knockout bulk RNA-seq data using [DESeq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8).
 
 | Script | Description |
 |--------|-------------|
-| `01_Scmap_Related_Fig1.Rmd` | Cell type/stage assignment using [scmap](https://www.nature.com/articles/nmeth.4644) |
-| `02_Expression_LipidGene_Related_FigS1.Rmd` | Gene expression heatmap using [ComplexHeatmap](https://academic.oup.com/bioinformatics/article/32/18/2847/1743594) |
-| `03_Mfuzz_Related_Fig1.Rmd` | Temporal clustering with [Mfuzz](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2139991/) |
-| `04_Randomforest_Related_Fig1.Rmd` | Lipid gene prediction via Random Forest |
-| `05_DESeq2_Related_Fig3.Rmd` | DE analysis of CAP knockout using [DESeq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8) |
+| `01_01_Making_SeuratObject_Pb_10X.Rmd` | Constructs Seurat object from *P. berghei* 10X data. |
+| `01_02_Making_SeuratObject_Pf_10X.Rmd` | Constructs Seurat object from *P. falciparum* 10X data. |
+| `01_03_Scmap.Rmd` | Performs cell type and stage assignment using [scmap](https://www.nature.com/articles/nmeth.4644). |
+| `01_04_scRNAseq_conclusion.Rmd` | Summary of single-cell RNA-seq results and temporal feature characteristics. |
+| `02_01_Mfuzz_Pb.Rmd` | Temporal expression clustering for *P. berghei* using Mfuzz. |
+| `02_02_Mfuzz_Pf.Rmd` | Temporal expression clustering for *P. falciparum* using Mfuzz. |
+| `02_03_Mfuzz_Conclusion.Rmd` | Summary and comparison of dynamic gene expression patterns. |
+| `03_01_LipidGene_expression.Rmd` | Expression analysis of lipid metabolism-related genes. |
+| `03_02_ML_for_candidate_gene.Rmd` | Machine learning-based gene scoring and selection using the MRS package. |
+| `04_DESeq2.Rmd` | Differential expression analysis for CAP knockout using DESeq2. |
 
 ---
 
